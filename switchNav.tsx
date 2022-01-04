@@ -36,7 +36,7 @@ const mapDispatchStateToProps = () => ({
 class App extends React.Component<Props> {
   componentDidMount() {
     if (!this.props.accessToken) {
-      AuthNavigationSettingStack();
+      User();
     } else {
       User();
     }

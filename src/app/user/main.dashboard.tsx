@@ -38,7 +38,6 @@ import {Avatar} from 'react-native-ui-lib';
 import User from '../types/user';
 import {Driver} from '../types/driver';
 import {API_KEY} from 'react-native-dotenv';
-import crashlytics from '@react-native-firebase/crashlytics';
 import {
   Notifications,
   Registered,
@@ -60,8 +59,8 @@ const mapStateToProps = (store: any) => ({
 });
 
 const mapDispatchStateToProps = (dispatch: any) => ({
-  getCurrentLocation: () =>
-    dispatch({type: currentLocation.GET_CUURENT_LOCATION_CALLER}),
+  getCurrentLocation: (payload: any) =>
+    dispatch({type: currentLocation.GET_CUURENT_LOCATION_CALLER, payload}),
   selectedLocation: (location: any) =>
     dispatch({
       type: setLocation.SET_LOCATION_CALLER,
@@ -118,7 +117,7 @@ type coords = {longitude: number; latitude: number};
 
 type Props = {
   componentId: string;
-  currentLocationPrediction: currentLocationObj[];
+  currentLocationPrediction: any[];
   currentLocationStatus: string;
   activeDelivery: parcelInProgress;
   user: User;
@@ -127,7 +126,7 @@ type Props = {
   confirmDeliveryStatus: string;
   watchPosition: coords;
   deliveryDeleted: boolean;
-  getCurrentLocation: () => void;
+  getCurrentLocation: (payload: string) => void;
   selectedLocation: (location: any) => void;
   setActiveDelivery: (payload: any, driver: any, discard?: boolean) => void;
   cancelDelivery: (parcelId: string) => void;
@@ -136,6 +135,18 @@ type Props = {
 };
 
 const styles = StyleSheet.create({
+  icon: {color: 'gray'},
+  iconStyle: {
+    width: 50,
+    height: 50,
+    borderRadius: 100,
+    borderColor: 'lightgray',
+    borderWidth: 1,
+    backgroundColor: 'whitesmoke',
+    justifyContent: 'center',
+    alignContent: 'center',
+    alignItems: 'center',
+  },
   searchingTextStyle: {marginVertical: 5},
   spinKitContainer: {
     alignContent: 'center',
@@ -296,9 +307,6 @@ class Dashboard extends React.Component<Props> {
   mapRef: any;
   driverInfo: any;
   trackerListener: any;
-  activeDeliveries = firestore()
-    .collection(firebasePaths.ACTIVE_DELIVERIES)
-    .where('parcelOwner', '==', this.props.user.userId);
 
   rideHistories = firestore().collection(firebasePaths.PARCEL_HISTORIES);
   driver = firestore().collection(firebasePaths.DRIVERS);
@@ -323,8 +331,6 @@ class Dashboard extends React.Component<Props> {
         });
       },
       (e) => {
-        crashlytics().log('error getting user coords');
-        crashlytics().recordError(new Error(e.message));
         this.getCurrentPosition();
       },
       {enableHighAccuracy: true},
@@ -449,9 +455,7 @@ class Dashboard extends React.Component<Props> {
           this.props.setActiveDelivery(parcel, data);
         }
       }
-    } catch (e) {
-      crashlytics().recordError(e);
-    }
+    } catch (e) {}
   }
 
   //watch drivers location when a trip is going on
@@ -483,9 +487,7 @@ class Dashboard extends React.Component<Props> {
       },
     );
     Notifications.events().registerRemoteNotificationsRegistrationFailed(
-      (event: RegistrationError) => {
-        crashlytics().recordError(new Error(event.localizedDescription));
-      },
+      (event: RegistrationError) => {},
     );
   }
 
@@ -495,7 +497,6 @@ class Dashboard extends React.Component<Props> {
         notification: Notification,
         completion: (response: NotificationCompletion) => void,
       ) => {
-        crashlytics().log('Notification Received - Foreground');
         // Calling completion on iOS with `alert: true` will present the native iOS inApp notification.
         completion({alert: true, sound: true, badge: false});
       },
@@ -503,7 +504,6 @@ class Dashboard extends React.Component<Props> {
 
     Notifications.events().registerNotificationReceivedBackground(
       (notification: any, completion: (response: any) => void) => {
-        crashlytics().log('Notification recieved');
         // Calling completion on iOS with `alert: true` will present the native iOS inApp notification.
         completion({alert: true, sound: true, badge: false});
       },
@@ -513,30 +513,10 @@ class Dashboard extends React.Component<Props> {
   //mounts the current component
   async componentDidMount() {
     this.registerNotificationListeners();
-    this.trackerListener = this.activeDeliveries.onSnapshot((valz) => {
-      if (!valz.empty) {
-        let doc: parcelInProgress[] = [];
-        valz.forEach((val) => {
-          let obj = val.data();
-          obj.id = val.id;
-          doc.push(obj as any);
-        });
-        this.getDriverInfo(doc[0]);
-        this.watchDriverLocation(doc[0].parcelPicker, doc[0]);
-      } else {
-        this.getDriverInfo(null as any);
-        this.watchDriverLocation(null, null);
-      }
-    });
-    if (!this.props.activeDelivery) {
-      this.props.getCurrentLocation();
-    }
-    this.getDeviceRegToken();
     try {
+      // this.props.getCurrentLocation('restaurant');
       this.getCurrentPosition();
-    } catch (e) {
-      crashlytics().recordError(e);
-    }
+    } catch (e) {}
   }
 
   //unsubscribe to all component
@@ -544,9 +524,7 @@ class Dashboard extends React.Component<Props> {
     try {
       Keyboard.dismiss();
       this.trackerListener();
-    } catch (e) {
-      crashlytics().recordError(e);
-    }
+    } catch (e) {}
     if (this.watchId) {
       Geolocation.clearWatch(this.watchId);
       this.watchId = null;
@@ -623,23 +601,10 @@ class Dashboard extends React.Component<Props> {
     );
   }
 
-  async saveToken(token: string) {
-    let admin = firestore()
-      .collection(firebasePaths.USERS)
-      .doc(this.props.user.userId);
-    admin
-      .set({
-        token: firestore.FieldValue.arrayUnion(token),
-        photo: this.props.user.photo,
-        firstName: this.props.user.firtName,
-        lastName: this.props.user.lastName,
-      })
-      .catch((e) => {
-        crashlytics().recordError(e);
-      });
-  }
+  async saveToken(token: string) {}
 
   render() {
+    console.log(this.props.currentLocationPrediction);
     return (
       <Container style={styles.mainContainer}>
         {this.renderCancelingPickUp()}
@@ -684,12 +649,8 @@ class Dashboard extends React.Component<Props> {
                   coordinate={this.getActiveDeliveryDestinationLocation()}
                 />
 
-                {this.props.activeDelivery && this.props.driver && (
-                  <Marker
-                    coordinate={{
-                      latitude: this.props.driver.lat,
-                      longitude: this.props.driver.lng,
-                    }}>
+                {this.props.currentLocationPrediction.map((val: any) => (
+                  <Marker coordinate={val.geometry}>
                     <View style={styles.driverMarker}>
                       <Icon
                         name="drive-eta"
@@ -698,7 +659,7 @@ class Dashboard extends React.Component<Props> {
                       />
                     </View>
                   </Marker>
-                )}
+                ))}
               </>
             )}
             {!this.props.activeDelivery && (
@@ -893,36 +854,6 @@ class Dashboard extends React.Component<Props> {
               </View>
             )}
 
-            {!this.props.activeDelivery && (
-              <>
-                <Text style={styles.welcomeText} note>
-                  welome nice to see you !
-                </Text>
-                <H3 style={styles.descLocation}>Want to pick parcel ?</H3>
-
-                <Item
-                  onPress={() =>
-                    this.navigate(NavigationScreens.CREATE_PARCEL_SCREEN)
-                  }
-                  bordered={false}
-                  style={styles.inputSearchLocation}>
-                  <Icon style={styles.searchIcon} active name="search" />
-                  <Input
-                    placeholderTextColor="#aaa"
-                    disabled
-                    placeholder="Search Pick up location"
-                  />
-                </Item>
-              </>
-            )}
-
-            {this.props.currentLocationStatus !== 'failed' &&
-              !this.props.activeDelivery && (
-                <Text style={styles.pickUpLocationCaption}>
-                  select a pick-up location
-                </Text>
-              )}
-
             {this.props.currentLocationStatus === 'started' &&
               !this.props.activeDelivery && (
                 <View style={styles.spinKitContainer}>
@@ -931,50 +862,38 @@ class Dashboard extends React.Component<Props> {
                     type="Circle"
                     size={40}
                   />
-                  <Text style={styles.searchingTextStyle} note>
-                    Searching my location ...
-                  </Text>
                 </View>
               )}
 
-            {this.props.currentLocationStatus ===
-              currentLocation.GET_CUURENT_LOCATION_SUCCESS &&
-              !this.props.activeDelivery && (
-                <FlatList
-                  data={this.props.currentLocationPrediction}
-                  style={styles.flatList}
-                  renderItem={({item}) => (
-                    <ListItem onPress={() => this.setLocation(item)}>
-                      <Icon
-                        type="EvilIcons"
-                        style={styles.ico}
-                        name="location"
-                      />
-                      <Body>
-                        <Text>{item.address}</Text>
-                      </Body>
-                    </ListItem>
-                  )}
-                />
-              )}
-
-            {this.props.currentLocationStatus === 'failed' &&
-              !this.props.activeDelivery && (
-                <Button rounded block style={styles.retryBtn}>
-                  <Text style={styles.retryText}>
-                    Could not get location Retry ?{' '}
-                  </Text>
-                </Button>
-              )}
+            <View style={{flexDirection: 'row'}}>
+              <View style={{alignItems: 'center', flexGrow: 1}}>
+                <View style={styles.iconStyle}>
+                  <Icon style={styles.icon} name="hotel" type="MaterialIcons" />
+                </View>
+                <Text style={{fontSize: 10}}>Hotels</Text>
+              </View>
+              <View style={{alignItems: 'center', flexGrow: 1}}>
+                <View style={styles.iconStyle}>
+                  <Icon style={styles.icon} name="restaurant" />
+                </View>
+                <Text style={{fontSize: 10}}>Restaurants</Text>
+              </View>
+              <View style={{alignItems: 'center', flexGrow: 1}}>
+                <View style={styles.iconStyle}>
+                  <Icon style={styles.icon} name="cab" type="FontAwesome" />
+                </View>
+                <Text style={{fontSize: 10}}>Cab</Text>
+              </View>
+            </View>
           </View>
 
-          <Fab
+          {/* <Fab
             active={true}
             style={styles.fab}
             position="topLeft"
             onPress={() => toggleSideMenu(true, this.props.componentId)}>
             <Icon style={{color: Colors.Brand.brandColor}} name="menu" />
-          </Fab>
+          </Fab> */}
         </View>
       </Container>
     );

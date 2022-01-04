@@ -15,18 +15,9 @@ import {
 import Utils from '../utilities/index';
 import * as joi from 'react-native-joi';
 import {Navigation} from 'react-native-navigation';
-import crashlytics from '@react-native-firebase/crashlytics';
 
 const loggedInlogs = async (payload: UserType) => {
-  return Promise.all([
-    crashlytics().setUserId(payload.userId),
-    crashlytics().setAttribute('phoneNumber', payload.phoneNumber),
-    crashlytics().setAttributes({
-      firstName: payload.firtName,
-      lastName: payload.lastName,
-      gender: payload.gender,
-    }),
-  ]);
+  return Promise.all([]);
 };
 const loginSchema = joi.object({
   phoneNumber: joi.string().length(11).required(),
@@ -42,7 +33,6 @@ function* WatchLogin() {
   yield takeEvery(loginActionType.LOGIN_CALLER, function* (action: any) {
     try {
       yield put({type: loginActionType.LOGIN_STARTED});
-      crashlytics().log('logging started');
       const {error} = loginSchema.validate(action.payload);
 
       if (error) {
@@ -50,7 +40,6 @@ function* WatchLogin() {
           type: loginActionType.LOGIN_FAILED,
           payload: error.details[0].message,
         });
-        crashlytics().log('login validation error aborted login');
       } else {
         const logUserIn = yield call(login.bind(this, action.payload));
 
@@ -63,7 +52,6 @@ function* WatchLogin() {
           refreshToken: refreshToken,
         });
 
-        crashlytics().log('login success');
         yield call(loggedInlogs.bind(null, payload));
         User();
       }
@@ -86,9 +74,6 @@ function* WatchLogin() {
       } else {
         yield put({type: loginActionType.LOGIN_FAILED, payload: errorMessage});
       }
-
-      crashlytics().log('login error');
-      crashlytics().recordError(e);
     }
   });
 }
@@ -135,7 +120,6 @@ function* watchSignUp() {
   yield takeEvery(signUpActionType.SIGNUP_CALLER, function* (action: any) {
     try {
       yield put({type: signUpActionType.SIGNUP_STARTED});
-      crashlytics().log(' signup started');
       const {error} = signUpSchema.validate(action.payload);
 
       if (error) {
@@ -143,7 +127,6 @@ function* watchSignUp() {
           type: signUpActionType.SIGNUP_FAILED,
           payload: error.details[0].message,
         });
-        crashlytics().log('input validation error');
       } else {
         const signUserIn = yield call(signUp.bind(this, action.payload));
 
@@ -166,7 +149,6 @@ function* watchSignUp() {
           token: token,
         });
 
-        crashlytics().log('logged in successfully');
         yield call(loggedInlogs.bind(null, payload));
         Navigation.push('stack.auth.signup', {
           component: {
@@ -201,9 +183,6 @@ function* watchSignUp() {
           payload: errorMessage,
         });
       }
-
-      crashlytics().log('error signing up');
-      crashlytics().recordError(e);
     }
   });
 }
@@ -280,7 +259,6 @@ function* watchResendCodeAuth() {
   yield takeEvery(
     verificationActionType.SEND_VERIFICATION_CODE_CALLER,
     function* (action: any) {
-      crashlytics().log('send verification code started');
       try {
         yield put({
           type: verificationActionType.SEND_VERIFICATION_CODE_STARTED,
@@ -299,7 +277,6 @@ function* watchResendCodeAuth() {
             payload: token,
           });
 
-          crashlytics().log('verification code sent successfully');
           if (action.resetPasswordFlow) {
             Navigation.push('stack.auth.validate.reset.credentials', {
               component: {
@@ -313,7 +290,6 @@ function* watchResendCodeAuth() {
             });
           }
         } else {
-          crashlytics().log('input validation error');
           yield put({
             type: verificationActionType.SEND_VERIFICATION_CODE_FAILED,
             payload: error.details[0].message,
@@ -345,9 +321,6 @@ function* watchResendCodeAuth() {
             payload: errorMessage,
           });
         }
-
-        crashlytics().log('error sending verification code');
-        crashlytics().recordError(e);
       }
     },
   );
@@ -378,7 +351,6 @@ function* watchVerifyCodeSent() {
   yield takeEvery(
     verifyingCodeAction.VERIFYING_CODE_CALLER,
     function* (action: any) {
-      crashlytics().log('verifiying code sent started');
       try {
         yield put({type: verifyingCodeAction.VERIFYING_CODE_STARTED});
 
@@ -395,7 +367,6 @@ function* watchVerifyCodeSent() {
             payload: payload,
           });
 
-          crashlytics().log('pin verification success');
           if (!action.resetPasswordFlow) {
             User();
           } else {
@@ -411,7 +382,6 @@ function* watchVerifyCodeSent() {
             type: verifyingCodeAction.VERIFYING_CODE_FAILED,
             payload: error.details[0].message,
           });
-          crashlytics().log('input validation error');
         }
       } catch (e) {
         let errorMessage: string;
@@ -439,9 +409,6 @@ function* watchVerifyCodeSent() {
             payload: errorMessage,
           });
         }
-
-        crashlytics().log('verifying pin failed');
-        crashlytics().recordError(e);
       }
     },
   );
@@ -459,7 +426,6 @@ function* ressetPassword() {
     RessetPasswordActionType.RESSET_PASSWORD_CALLER,
     function* (action: any) {
       try {
-        crashlytics().log('resseting password started');
         yield put({type: RessetPasswordActionType.RESSET_PASSWORD_STARTED});
 
         if (action.payload.password !== action.confirmNewPassword) {
@@ -467,7 +433,6 @@ function* ressetPassword() {
             type: RessetPasswordActionType.RESSET_PASSWORD_FAILED,
             payload: 'password do not match',
           });
-          crashlytics().log('password mismatch aborted request');
         } else {
           const {error} = ressetPasswordValidation.validate(action.payload);
           if (!error) {
@@ -482,14 +447,12 @@ function* ressetPassword() {
               payload: payload,
             });
             Keyboard.dismiss();
-            crashlytics().log('password resseted successfully');
             User();
           } else {
             yield put({
               type: RessetPasswordActionType.RESSET_PASSWORD_FAILED,
               payload: error.details[0].message,
             });
-            crashlytics().log('validation error, invalid input');
           }
         }
       } catch (e) {
@@ -518,9 +481,6 @@ function* ressetPassword() {
             payload: errorMessage,
           });
         }
-
-        crashlytics().log('error resseting password');
-        crashlytics().recordError(e);
       }
     },
   );

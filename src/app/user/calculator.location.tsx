@@ -18,7 +18,6 @@ import MapViewDirections from 'react-native-maps-directions';
 import {inputActionType} from '../../configs/global.enum';
 import NavigationScreens from '../../../nav.config/navigation.screens';
 import {API_KEY} from 'react-native-dotenv';
-import crashlytics from '@react-native-firebase/crashlytics';
 
 const {width} = Dimensions.get('window');
 
@@ -294,8 +293,6 @@ class CalculatorParcel extends React.Component<Props> {
         longitude: lng,
       };
     } catch (e) {
-      crashlytics().log('could not get users location');
-      crashlytics().recordError(e);
       return {
         latitude: 0.28,
         longitude: 0.2992,

@@ -14,7 +14,6 @@ import firestore from '@react-native-firebase/firestore';
 import {appUrl, firebasePaths} from '../../configs/globals.config';
 import {inputActionType} from '../../configs/global.enum';
 import axios from 'axios';
-import crashlytics from '@react-native-firebase/crashlytics';
 
 const firebaseStorage = storage;
 
@@ -140,8 +139,6 @@ class Profile extends React.Component<Props> {
         Alert.alert('', 'Profile picture changed successfully!! ');
       });
     } catch (e) {
-      crashlytics().log('unable to save or send profile picture to backend');
-      crashlytics().recordError(e);
       Alert.alert('Unable to set profile picture please try again.');
     }
   }
@@ -168,15 +165,10 @@ class Profile extends React.Component<Props> {
             this.savingProfilePicture(url);
           });
         })
-        .catch((e) => {
-          crashlytics().log('could not get download url for uploaded task');
-          crashlytics().recordError(e);
-        });
+        .catch((e) => {});
     });
 
     $task.catch((e) => {
-      crashlytics().log('uploading image failed');
-      crashlytics().recordError(e);
       this.setState({modalVisible: false}, () => {
         Alert.alert('', 'unable to upload profile photo');
       });
@@ -194,8 +186,6 @@ class Profile extends React.Component<Props> {
         );
       })
       .catch((e) => {
-        crashlytics().log('uploading error');
-        crashlytics().recordError(e);
         Alert.alert('', 'unable to upload profile photo');
       });
   }

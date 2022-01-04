@@ -21,7 +21,6 @@ import {Alert} from 'react-native';
 import RNPaystack from 'react-native-paystack';
 import Utils from '../utilities/index';
 import {NodeEnv} from 'react-native-dotenv';
-import crashlytics from '@react-native-firebase/crashlytics';
 
 function* watchSetParcelLocation() {
   yield takeEvery(
@@ -68,8 +67,6 @@ const getPlace = async (searchString: string) => {
 
     return result;
   } catch (e) {
-    crashlytics().log('google places error');
-    crashlytics().recordError(e);
     return e;
   }
 };
@@ -87,9 +84,6 @@ function* watchSearchLocation() {
         });
       } catch (e) {
         yield put({type: searchLocation.SEARCH_LOCATION_FAILED});
-
-        crashlytics().log('Google places search error');
-        crashlytics().recordError(e);
       }
     },
   );
@@ -106,8 +100,6 @@ const getPlaceDetails = async (placeID: string) => {
 
     return result;
   } catch (e) {
-    crashlytics().log('Could not get places prediction details');
-    crashlytics().recordError(e);
     return e;
   }
 };
@@ -162,40 +154,37 @@ function* watchSetDistanceAndDuration() {
   );
 }
 
-const getCurrentLocation = async () => {
+const getCurrentLocation = async (types: string) => {
   try {
-    let result = await RNGooglePlaces.getCurrentPlace([
-      'placeID',
-      'location',
-      'name',
-      'address',
-    ]);
-
-    return result;
+    const getLocations = await axios.get(
+      `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=10.3764,7.7095&radius=2500&types=${types}&key=AIzaSyCtd3Y6goIZCbYwzPPZeIPLKn-Fwd7bW6Y`,
+    );
+    return getLocations.data.results;
   } catch (e) {
-    crashlytics().log('Could nto get user current location');
-    crashlytics().recordError(e);
     return e;
   }
 };
 
 function* watchGetCurrentLocation() {
-  yield takeEvery(currentLocation.GET_CUURENT_LOCATION_CALLER, function* () {
-    try {
-      yield put({type: currentLocation.GET_CUURENT_LOCATION_STARTED});
+  yield takeEvery(
+    currentLocation.GET_CUURENT_LOCATION_CALLER,
+    function* (action: any) {
+      try {
+        yield put({type: currentLocation.GET_CUURENT_LOCATION_STARTED});
 
-      const getPlaces: any = yield call(getCurrentLocation.bind(null));
+        const getPlaces: any = yield call(
+          getCurrentLocation.bind(null, action.payload),
+        );
 
-      yield put({
-        type: currentLocation.GET_CUURENT_LOCATION_SUCCESS,
-        payload: getPlaces,
-      });
-    } catch (e) {
-      crashlytics().log('Could not get current location information');
-      crashlytics().recordError(e);
-      yield put({type: currentLocation.GET_CUURENT_LOCATION_FAILED});
-    }
-  });
+        yield put({
+          type: currentLocation.GET_CUURENT_LOCATION_SUCCESS,
+          payload: getPlaces,
+        });
+      } catch (e) {
+        yield put({type: currentLocation.GET_CUURENT_LOCATION_FAILED});
+      }
+    },
+  );
 }
 
 function* watchEnableAddCreditCardBtn() {
@@ -237,7 +226,6 @@ function* watchAddCreditCard() {
       try {
         const cardNumber = action.payload.number.split(' ').join('');
         yield put({type: AddCreditCard.ADD_CREDEIT_CARD_STARTED});
-        crashlytics().log('adding Card started');
         const chargeCard = yield call(addCreditCard.bind(null, action.payload));
         let cardInfo = {
           reference: chargeCard.reference,
@@ -261,7 +249,6 @@ function* watchAddCreditCard() {
           type: AddCreditCard.ADD_CREDIT_CARD_SUCCESS,
           payload: payload,
         });
-        crashlytics().log('successfully added card');
       } catch (e) {
         let errorMessage: string;
         let requestStatus: number;
@@ -287,9 +274,6 @@ function* watchAddCreditCard() {
             payload: errorMessage,
           });
         }
-
-        crashlytics().log('could not add card');
-        crashlytics().recordError(e);
       }
     },
   );
@@ -305,12 +289,10 @@ function* RemoveValidCard() {
     function* (action: any) {
       try {
         yield put({type: RemoveCreditCard.REMOVE_CREDEIT_CARD_STARTED});
-        crashlytics().log('removing card started');
         yield call(removeCreditCard.bind(null, action.card));
         yield put({
           type: RemoveCreditCard.REMOVE_CREDIT_CARD_SUCCESS,
         });
-        crashlytics().log('removing card successfully');
       } catch (e) {
         let errorMessage: string;
         let requestStatus: number;
@@ -337,9 +319,6 @@ function* RemoveValidCard() {
             payload: errorMessage,
           });
         }
-
-        crashlytics().log('Could not remove card error');
-        crashlytics().recordError(e);
       }
     },
   );
@@ -355,14 +334,12 @@ function* watchGetCreditCards() {
     function* (action: any) {
       try {
         yield put({type: GetCreditCards.GET_CREDEIT_CARD_STARTED});
-        crashlytics().log('Getting credit cards');
         const cards = yield call(getCreditCard.bind(null, action.payload));
         const {payload} = cards.data;
         yield put({
           type: GetCreditCards.GET_CREDIT_CARD_SUCCESS,
           payload: payload,
         });
-        crashlytics().log('getting cards success');
       } catch (e) {
         let errorMessage: string;
         let requestStatus: number;
@@ -388,9 +365,6 @@ function* watchGetCreditCards() {
             payload: errorMessage,
           });
         }
-
-        crashlytics().log('Getting credit cards failed');
-        crashlytics().recordError(e);
       }
     },
   );
@@ -417,12 +391,10 @@ const createParcelRequest = async (payload: any) => {
 function* watchCreateparcel() {
   yield takeLeading(createParcel.CREATE_PARCEL_CALLER, function* (action: any) {
     yield put({type: createParcel.CREATE_PARCEL_STARTED});
-    crashlytics().log('Creating parcel started .... ');
     try {
       yield call(createParcelRequest.bind(null, action.payload));
       yield put({type: createParcel.CREATE_PARCEL_SUCCESS});
       Navigation.popToRoot(NavigationScreens.SEARCH_PICKUP_SCREEN);
-      crashlytics().log('Created parcel successfully happy trip!!!!');
     } catch (e) {
       let message = '';
 
@@ -434,8 +406,6 @@ function* watchCreateparcel() {
 
       yield put({type: createParcel.CREATE_PARCEL_FAILED});
       Alert.alert('', message);
-      crashlytics().log('oops, something went wrong creating parcel');
-      crashlytics().recordError(e);
     }
   });
 }
@@ -464,7 +434,6 @@ function* watchCancelDelivery() {
     cancelDeliveryActionType.CANCEL_DELIVERY_CALLER,
     function* (action: any) {
       yield put({type: cancelDeliveryActionType.CANCEL_DELIVERY_STARTED});
-      crashlytics().log('Cancelling created parcel started !!! ');
       try {
         yield call(
           cancelDelivery.bind(null, {
@@ -473,7 +442,6 @@ function* watchCancelDelivery() {
           }),
         );
         yield put({type: cancelDeliveryActionType.CANCEL_DELIVERY_SUCCESS});
-        crashlytics().log('cancelled parcel successfully ');
       } catch (e) {
         let message = '';
 
@@ -485,8 +453,6 @@ function* watchCancelDelivery() {
 
         yield put({type: cancelDeliveryActionType.CANCEL_DELIVERY_FAILED});
         Alert.alert('', message);
-        crashlytics().log('could not cancel parcel');
-        crashlytics().recordError(e);
       }
     },
   );
@@ -502,7 +468,6 @@ function* watchConfirmDelivery() {
     confirmDeliveryActionType.CONFIRM_DELIVERY_CALLER,
     function* (action: any) {
       yield put({type: confirmDeliveryActionType.CONFIRM_DELIVERY_STARTED});
-      crashlytics().log('confirm parcel is delivered started');
       try {
         yield call(
           confirmDelivery.bind(null, {
@@ -510,7 +475,6 @@ function* watchConfirmDelivery() {
           }),
         );
         yield put({type: confirmDeliveryActionType.CONFIRM_DELIVERY_SUCCESS});
-        crashlytics().log('confirm parcel is delivered successfully');
       } catch (e) {
         let message = '';
 
@@ -522,8 +486,6 @@ function* watchConfirmDelivery() {
 
         yield put({type: confirmDeliveryActionType.CONFIRM_DELIVERY_FAILED});
         Alert.alert('', message);
-        crashlytics().log('could not confirm transaction or parcel delivered');
-        crashlytics().recordError(e);
       }
     },
   );
@@ -584,7 +546,6 @@ const getUserParcel = async (payload: any) => {
 function* watchGetUserParcels() {
   yield takeLeading(GetUsersParcel.GET_PARCEL_CALLER, function* (action: any) {
     yield put({type: GetUsersParcel.GET_PARCEL_STARTED});
-    yield crashlytics().log('getting list of users previous parcels delivery');
     try {
       const parcels = yield call(
         getUserParcel.bind(null, {page: action.page, userId: action.userId}),
@@ -594,7 +555,6 @@ function* watchGetUserParcels() {
         payload: parcels.data.payload,
         page: action.page,
       });
-      crashlytics().log('Gotten list of parcels successfully');
     } catch (e) {
       let message = '';
 
@@ -605,10 +565,6 @@ function* watchGetUserParcels() {
       }
 
       yield put({type: GetUsersParcel.GET_PARCEL_FAILED, payload: message});
-      crashlytics().log(
-        'Ooops could not get list of parcels  something went wrong',
-      );
-      crashlytics().recordError(e);
     }
   });
 }

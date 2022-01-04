@@ -24,7 +24,6 @@ import UserType from '../types/user';
 import {createParcel, inputActionType} from '../../configs/global.enum';
 const {width, height} = Dimensions.get('window');
 import {API_KEY} from 'react-native-dotenv';
-import crashlytics from '@react-native-firebase/crashlytics';
 
 type locationDetails = {
   name: string;
@@ -414,8 +413,6 @@ class SearchPickUp extends React.Component<Props> {
         longitude: lng,
       };
     } catch (e) {
-      crashlytics().log('Getting formatted cordinates error');
-      crashlytics().recordError(e);
       return {
         latitude: 0.28,
         longitude: 0.2992,

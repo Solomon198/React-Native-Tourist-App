@@ -15,7 +15,6 @@ Navigation.setDefaultOptions({
     visible:false,
   },
   bottomTabs:{
-    visible:false,
   },
   sideMenu:{
     

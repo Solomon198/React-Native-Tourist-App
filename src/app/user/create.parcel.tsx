@@ -25,7 +25,6 @@ import {
 import axios from 'axios';
 import NavigationScreens from '../../../nav.config/navigation.screens';
 import {API_KEY} from 'react-native-dotenv';
-import crashlytics from '@react-native-firebase/crashlytics';
 
 type searchResult = {
   primaryText: string;
@@ -268,10 +267,7 @@ class CreateParcel extends React.Component<Props> {
         let variables = data.data();
         this.props.setVariables(variables);
       })
-      .catch((e) => {
-        crashlytics().log('error getting environment config');
-        crashlytics().recordError(e);
-      });
+      .catch((e) => {});
   }
 
   componentDidMount() {
@@ -332,8 +328,6 @@ class CreateParcel extends React.Component<Props> {
         });
       })
       .catch((e) => {
-        crashlytics().log('could not get physical address from googleapis.com');
-        crashlytics().recordError(e);
         this.setState({gettingLocationStatus: 'failed'});
       });
   }

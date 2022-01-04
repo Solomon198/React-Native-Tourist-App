@@ -38,27 +38,86 @@ export function AuthNavigationSettingStack() {
 export function User() {
   Navigation.setRoot({
     root: {
-      sideMenu: {
-        center: {
-          stack: {
-            id: 'stack.user.center',
-            children: [
-              {
-                component: {
-                  name: NavigationScreens.DASHBOARD_SCREEN,
-                  id: NavigationScreens.DASHBOARD_SCREEN,
+      bottomTabs: {
+        id: 'HOME_TAB',
+        children: [
+          {
+            stack: {
+              id: 'DASHBOAED',
+              children: [
+                {
+                  component: {
+                    name: NavigationScreens.DASHBOARD_SCREEN,
+                    id: NavigationScreens.DASHBOARD_SCREEN,
+                  },
+                },
+              ],
+              options: {
+                bottomTab: {
+                  icon: require('../assets/media/icons/home.png'),
+                  iconColor: 'dodgerblue',
                 },
               },
-            ],
+            },
           },
-        },
-
-        left: {
-          component: {
-            name: NavigationScreens.SIDEMENU_SCREEN,
-            id: NavigationScreens.SIDEMENU_SCREEN,
+          // {
+          //   stack: {
+          //     id: 'Add POST',
+          //     children: [
+          //       {
+          //         component: {
+          //           name: NavigationScreens.PAYMENT_OPTION_SCREEN,
+          //           id: NavigationScreens.PAYMENT_OPTION_SCREEN,
+          //         },
+          //       },
+          //     ],
+          //     options: {
+          //       bottomTab: {
+          //         icon: require('../assets/media/icons/plus.png'),
+          //         iconColor: 'dodgerblue',
+          //       },
+          //     },
+          //   },
+          // },
+          {
+            stack: {
+              id: 'Reservation',
+              children: [
+                {
+                  component: {
+                    name: NavigationScreens.NOTIFICATION_SCREEN,
+                    id: NavigationScreens.NOTIFICATION_SCREEN,
+                  },
+                },
+              ],
+              options: {
+                bottomTab: {
+                  icon: require('../assets/media/icons/store.png'),
+                  iconColor: 'dodgerblue',
+                },
+              },
+            },
           },
-        },
+          // {
+          //   stack: {
+          //     id: NavigationScreens.PROFILE_TAB,
+          //     children: [
+          //       {
+          //         component: {
+          //           name: NavigationScreens.PROFILE_SCREEN,
+          //           id: NavigationScreens.PROFILE_SCREEN,
+          //         },
+          //       },
+          //     ],
+          //     options: {
+          //       bottomTab: {
+          //         icon: require('../assets/media/icons/user.png'),
+          //         iconColor: 'dodgerblue',
+          //       },
+          //     },
+          //   },
+          // },
+        ],
       },
     },
   });
