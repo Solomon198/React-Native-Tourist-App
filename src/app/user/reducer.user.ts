@@ -10,6 +10,7 @@ import {
   RemoveCreditCard,
   GetCreditCards,
   GetUsersParcel,
+  Book,
 } from '../../configs/global.enum';
 
 const initialState = {
@@ -58,10 +59,17 @@ const initialState = {
   gettingParcelStatus: GetUsersParcel.GET_PARCEL_DEFAULT,
   errorGettingParcel: '',
   parcels: [],
+  Bookings: [] as any[],
 };
 
 function UserReducer(state = initialState, action: any) {
   switch (action.type) {
+    case Book.BOOK_PLACE: {
+      const Bookings: any[] = state.Bookings;
+      Bookings.unshift(action.payload);
+      state = {...state, Bookings};
+      return state;
+    }
     case GetUsersParcel.GET_PARCEL_STARTED: {
       state = {
         ...state,

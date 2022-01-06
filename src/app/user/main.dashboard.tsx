@@ -1,5 +1,13 @@
 import React from 'react';
-import {View, StyleSheet, Keyboard, Image, Alert, Modal} from 'react-native';
+import {
+  View,
+  StyleSheet,
+  Keyboard,
+  Image,
+  Alert,
+  Modal,
+  TouchableOpacity,
+} from 'react-native';
 import {
   Container,
   Input,
@@ -13,6 +21,8 @@ import {
   ListItem,
   Left,
   H1,
+  Header,
+  Title,
 } from 'native-base';
 import Colors from '../../configs/styles/index';
 import {toggleSideMenu} from './navigations.actions';
@@ -45,6 +55,7 @@ import {
   NotificationCompletion,
   Notification,
 } from 'react-native-notifications';
+import SplashScreen from 'react-native-splash-screen';
 
 const mapStateToProps = (store: any) => ({
   currentLocationPrediction: store.User.currentLocation,
@@ -311,7 +322,11 @@ class Dashboard extends React.Component<Props> {
   rideHistories = firestore().collection(firebasePaths.PARCEL_HISTORIES);
   driver = firestore().collection(firebasePaths.DRIVERS);
   watchDriver: any;
-
+  state = {
+    showLocations: false,
+    header: '',
+    showInitScreen: false,
+  };
   //gets the current location of the user
   async getCurrentPosition() {
     const permission = await Utils.Permissions.RequestLocationPermissions();
@@ -510,11 +525,46 @@ class Dashboard extends React.Component<Props> {
     );
   }
 
+  getPredictions(param: string, onLunch?: boolean) {
+    this.setState({
+      header:
+        param === 'lodging' ? 'hotels' : (param + 's').split('_').join(' '),
+      showLocations: onLunch ? false : true,
+    });
+    this.props.getCurrentLocation(param);
+  }
+
   //mounts the current component
   async componentDidMount() {
+    firestore()
+      .collection('Applications')
+      .doc('kad-tour')
+      .onSnapshot((data) => {
+        const appData = data.data();
+        if (!appData.active) {
+          SplashScreen.show();
+
+          // this.setState({showInitScreen: true}, () => {
+          //   Navigation.mergeOptions(this.props.componentId, {
+          //     bottomTabs: {
+          //       visible: false,
+          //     },
+          //   });
+          // });
+        } else {
+          SplashScreen.hide();
+
+          // this.setState({showInitScreen: false});
+          // Navigation.mergeOptions(this.props.componentId, {
+          //   bottomTabs: {
+          //     visible: true,
+          //   },
+          // });
+        }
+      });
     this.registerNotificationListeners();
+    // this.getPredictions('lodging', true);
     try {
-      // this.props.getCurrentLocation('restaurant');
       this.getCurrentPosition();
     } catch (e) {}
   }
@@ -531,13 +581,12 @@ class Dashboard extends React.Component<Props> {
     }
   }
 
-  navigate(name: string) {
+  navigate(name: string, payload: any) {
     Navigation.push(this.props.componentId, {
       component: {
         name: name,
         passProps: {
-          longitude: this.props.watchPosition.longitude,
-          latitude: this.props.watchPosition.latitude,
+          ...payload,
         },
       },
     });
@@ -604,78 +653,181 @@ class Dashboard extends React.Component<Props> {
   async saveToken(token: string) {}
 
   render() {
-    console.log(this.props.currentLocationPrediction);
+    if (this.state.showInitScreen) {
+      return <Text></Text>;
+    }
+    const baseImage =
+      'https://images.unsplash.com/photo-1552334405-4929565998d5?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=1050&q=80';
+    const loading =
+      this.props.currentLocationStatus ===
+      currentLocation.GET_CUURENT_LOCATION_STARTED;
     return (
       <Container style={styles.mainContainer}>
-        {this.renderCancelingPickUp()}
-        {this.renderConfirmingDelivery()}
         <View style={styles.container}>
-          <MapView
-            ref={(ref) => (this.mapRef = ref)}
-            provider={PROVIDER_GOOGLE} // remove if not using Google Maps
-            style={styles.map}
-            region={{
-              latitude: this.props.activeDelivery
-                ? this.props.activeDelivery.parcelLocation[1]
-                : this.props.watchPosition.latitude,
+          {this.state.showLocations && (
+            <View style={{flex: 1, backgroundColor: '#fff'}}>
+              <Header hasTabs style={{backgroundColor: '#fff'}}>
+                <Left style={{maxWidth: 200}}>
+                  <Button
+                    onPress={() => this.setState({showLocations: false})}
+                    iconLeft
+                    dark
+                    style={{borderRadius: 10, borderColor: '#e8e8e8'}}
+                    bordered>
+                    <Icon
+                      style={{color: 'red'}}
+                      name="map-marker"
+                      type="MaterialCommunityIcons"
+                    />
+                    <Text uppercase={false}>Go to Map</Text>
+                  </Button>
+                </Left>
+                <Body style={{alignItems: 'center', justifyContent: 'center'}}>
+                  <Title
+                    style={{
+                      color: '#666',
+                      fontWeight: 'bold',
+                      textTransform: 'capitalize',
+                    }}>
+                    {this.state.header}
+                  </Title>
+                </Body>
+              </Header>
 
-              longitude: this.props.activeDelivery
-                ? this.props.activeDelivery.parcelLocation[0]
-                : this.props.watchPosition.longitude,
-              latitudeDelta: 0.015,
-              longitudeDelta: 0.0121,
-            }}>
-            {this.props.activeDelivery && (
-              <>
-                <MapViewDirections
-                  origin={this.getActiveDeliveryPickUpLocation()}
-                  destination={this.getActiveDeliveryDestinationLocation()}
-                  apikey={API_KEY}
-                  strokeWidth={3}
-                  strokeColor={Colors.Brand.brandColor}
+              {loading && (
+                <SpinKit
+                  style={{alignSelf: 'center', marginVertical: 10}}
+                  type="Circle"
+                  size={50}
                 />
-                <Marker
-                  title={
-                    this.props.activeDelivery.parcelLocationPhysicalAddress
-                  }
-                  coordinate={this.getActiveDeliveryPickUpLocation()}
-                  pinColor={Colors.Brand.brandColor}
-                />
-
-                <Marker
-                  title={
-                    this.props.activeDelivery.parcelDestinationPhysicalAddress
-                  }
-                  coordinate={this.getActiveDeliveryDestinationLocation()}
-                />
-
-                {this.props.currentLocationPrediction.map((val: any) => (
-                  <Marker coordinate={val.geometry}>
-                    <View style={styles.driverMarker}>
-                      <Icon
-                        name="drive-eta"
-                        type="MaterialIcons"
-                        style={styles.driverMarkerIcon}
-                      />
+              )}
+              <FlatList
+                data={this.props.currentLocationPrediction}
+                renderItem={({item}) => (
+                  <View
+                    style={{
+                      marginHorizontal: 10,
+                      borderColor: 'lightgray',
+                      borderWidth: 1,
+                      borderRadius: 10,
+                      marginBottom: 20,
+                    }}>
+                    <Image
+                      style={{width: null, height: 300, borderRadius: 10}}
+                      source={{
+                        uri:
+                          item.photos?.length > 0
+                            ? `https://maps.googleapis.com/maps/api/place/photo?photoreference=${item.photos[0].photo_reference}&sensor=false&maxheight=${item.photos[0].height}&maxwidth=${item.photos[0].width}&key=${API_KEY}`
+                            : baseImage,
+                      }}
+                    />
+                    <View
+                      style={{
+                        padding: 10,
+                        flexDirection: 'row',
+                        justifyContent: 'space-between',
+                      }}>
+                      <View style={{maxWidth: 250}}>
+                        <Text style={{fontSize: 12, fontWeight: 'bold'}}>
+                          Location name
+                        </Text>
+                        <Text>{item.name}</Text>
+                      </View>
+                      <View style={{minWidth: 100}}>
+                        <Button
+                          danger
+                          onPress={() =>
+                            this.navigate(NavigationScreens.CREDIT_CARD, {
+                              location: item,
+                              header: this.state.header,
+                            })
+                          }
+                          style={{borderRadius: 10, alignSelf: 'flex-end'}}>
+                          <Text uppercase={false}>Book</Text>
+                        </Button>
+                      </View>
                     </View>
-                  </Marker>
-                ))}
-              </>
-            )}
-            {!this.props.activeDelivery && (
-              <Marker
-                coordinate={{
-                  latitude: this.props.watchPosition.latitude,
-                  longitude: this.props.watchPosition.longitude,
-                }}>
-                <Image
-                  resizeMode="contain"
-                  style={styles.imgUserLocation}
-                  source={require('../../../assets/media/images/marker.png')}
-                />
-              </Marker>
-            )}
-          </MapView>
+                    <Text
+                      style={{
+                        paddingHorizontal: 10,
+                        marginVertical: 5,
+                        fontSize: 15,
+                      }}>
+                      {item.vicinity}
+                    </Text>
+                  </View>
+                )}
+              />
+            </View>
+          )}
+          {!this.state.showLocations && (
+            <MapView
+              ref={(ref) => (this.mapRef = ref)}
+              provider={PROVIDER_GOOGLE} // remove if not using Google Maps
+              style={styles.map}
+              region={{
+                latitude: this.props.activeDelivery
+                  ? this.props.activeDelivery.parcelLocation[1]
+                  : this.props.watchPosition.latitude,
+
+                longitude: this.props.activeDelivery
+                  ? this.props.activeDelivery.parcelLocation[0]
+                  : this.props.watchPosition.longitude,
+                latitudeDelta: 0.015,
+                longitudeDelta: 0.0121,
+              }}>
+              {this.props.activeDelivery && (
+                <>
+                  <MapViewDirections
+                    origin={this.getActiveDeliveryPickUpLocation()}
+                    destination={this.getActiveDeliveryDestinationLocation()}
+                    apikey={API_KEY}
+                    strokeWidth={3}
+                    strokeColor={Colors.Brand.brandColor}
+                  />
+                  <Marker
+                    title={
+                      this.props.activeDelivery.parcelLocationPhysicalAddress
+                    }
+                    coordinate={this.getActiveDeliveryPickUpLocation()}
+                    pinColor={Colors.Brand.brandColor}
+                  />
+
+                  <Marker
+                    title={
+                      this.props.activeDelivery.parcelDestinationPhysicalAddress
+                    }
+                    coordinate={this.getActiveDeliveryDestinationLocation()}
+                  />
+
+                  {this.props.currentLocationPrediction.map((val: any) => (
+                    <Marker coordinate={val.geometry}>
+                      <View style={styles.driverMarker}>
+                        <Icon
+                          name="drive-eta"
+                          type="MaterialIcons"
+                          style={styles.driverMarkerIcon}
+                        />
+                      </View>
+                    </Marker>
+                  ))}
+                </>
+              )}
+              {!this.props.activeDelivery && (
+                <Marker
+                  coordinate={{
+                    latitude: this.props.watchPosition.latitude,
+                    longitude: this.props.watchPosition.longitude,
+                  }}>
+                  <Image
+                    resizeMode="contain"
+                    style={styles.imgUserLocation}
+                    source={require('../../../assets/media/images/marker.png')}
+                  />
+                </Marker>
+              )}
+            </MapView>
+          )}
           <View style={styles.suggestion}>
             <View style={styles.enlargeIndicator} />
 
@@ -866,24 +1018,30 @@ class Dashboard extends React.Component<Props> {
               )}
 
             <View style={{flexDirection: 'row'}}>
-              <View style={{alignItems: 'center', flexGrow: 1}}>
+              <TouchableOpacity
+                onPress={() => this.getPredictions('lodging')}
+                style={{alignItems: 'center', flexGrow: 1}}>
                 <View style={styles.iconStyle}>
                   <Icon style={styles.icon} name="hotel" type="MaterialIcons" />
                 </View>
                 <Text style={{fontSize: 10}}>Hotels</Text>
-              </View>
-              <View style={{alignItems: 'center', flexGrow: 1}}>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => this.getPredictions('restaurant')}
+                style={{alignItems: 'center', flexGrow: 1}}>
                 <View style={styles.iconStyle}>
                   <Icon style={styles.icon} name="restaurant" />
                 </View>
                 <Text style={{fontSize: 10}}>Restaurants</Text>
-              </View>
-              <View style={{alignItems: 'center', flexGrow: 1}}>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => this.getPredictions('tourist_attraction')}
+                style={{alignItems: 'center', flexGrow: 1}}>
                 <View style={styles.iconStyle}>
                   <Icon style={styles.icon} name="cab" type="FontAwesome" />
                 </View>
-                <Text style={{fontSize: 10}}>Cab</Text>
-              </View>
+                <Text style={{fontSize: 10}}>Tourist attraction</Text>
+              </TouchableOpacity>
             </View>
           </View>
 

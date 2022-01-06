@@ -12,6 +12,7 @@ import {
   RemoveCreditCard,
   GetCreditCards,
   GetUsersParcel,
+  Book,
 } from '../../configs/global.enum';
 import {appUrl} from '../../configs/globals.config';
 import axios from 'axios';
@@ -142,6 +143,12 @@ function* watchResetInputs() {
   });
 }
 
+function* watchBook() {
+  yield takeEvery(Book.BOOK_CALLER, function* (action: any) {
+    yield put({type: Book.BOOK_PLACE, payload: action.payload});
+  });
+}
+
 function* watchSetDistanceAndDuration() {
   yield takeEvery(
     inputActionType.SET_DURATION_AND_DISTANCE_CALLER,
@@ -157,7 +164,7 @@ function* watchSetDistanceAndDuration() {
 const getCurrentLocation = async (types: string) => {
   try {
     const getLocations = await axios.get(
-      `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=10.3764,7.7095&radius=2500&types=${types}&key=AIzaSyCtd3Y6goIZCbYwzPPZeIPLKn-Fwd7bW6Y`,
+      `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=10.5191,7.4520&radius=1250000&types=${types}&key=AIzaSyCtd3Y6goIZCbYwzPPZeIPLKn-Fwd7bW6Y`,
     );
     return getLocations.data.results;
   } catch (e) {
@@ -570,6 +577,7 @@ function* watchGetUserParcels() {
 }
 
 export default {
+  watchBook,
   watchGetCreditCards,
   setCardEmail,
   watchSetLocationDetails,

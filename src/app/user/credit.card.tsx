@@ -22,10 +22,11 @@ import {Navigation} from 'react-native-navigation';
 import {connect} from 'react-redux';
 import {LiteCreditCardInput} from 'react-native-credit-card-input';
 import NavigationScreens from '../../../nav.config/navigation.screens';
-import {AddCreditCard, inputActionType} from '../../configs/global.enum';
+import {AddCreditCard, inputActionType, Book} from '../../configs/global.enum';
 import * as joi from 'react-native-joi';
 import SpinKit from 'react-native-spinkit';
 import User from '../types/user';
+import helperFuncs from '../utilities/helper.funcs';
 
 const validateEmail = joi.object({
   email: joi.string().email().required(),
@@ -77,9 +78,12 @@ type Props = {
   addCreditCardStatus: string;
   addCreditCardError: string;
   user: User;
+  location: any;
+  header: any;
   setCardEmail: (email: string) => void;
   addCard: (card: any) => void;
   enableAddCreditCardButton: (payload: boolean) => void;
+  book: (payload: any) => void;
 };
 
 const mapStateToProps = (store: any) => ({
@@ -98,6 +102,7 @@ const mapDispatchStateToProps = (dispatch: any) => ({
     dispatch({type: 'DO-ENABLE-ADD-BUTTON', payload: payload}),
   setCardEmail: (email: string) =>
     dispatch({type: inputActionType.SET_CARD_EMAIL, payload: email}),
+  book: (payload: any) => dispatch({type: Book.BOOK_CALLER, payload}),
 });
 
 class CreditCard extends React.Component<Props> {
@@ -113,6 +118,11 @@ class CreditCard extends React.Component<Props> {
     });
   }
 
+  getFigure() {
+    const numb = Math.floor(Math.random() * 5000) + 1500;
+    return numb;
+  }
+
   validCard: any;
   timer: any;
 
@@ -121,6 +131,7 @@ class CreditCard extends React.Component<Props> {
   }
 
   componentDidMount() {
+    this.props.enableAddCreditCardButton(false);
     BackHandler.addEventListener('hardwareBackPress', this.handleBackAction);
   }
 
@@ -138,39 +149,15 @@ class CreditCard extends React.Component<Props> {
     return false;
   };
 
-  addCard(card: any) {
+  addCard() {
     Keyboard.dismiss();
     const {error} = validateEmail.validate({email: this.props.cardEmail});
     if (error) {
       return this.setState({error: error.details[0].message});
     }
-    if (!this.props.userCards) {
-      return this.props.addCard({
-        ...card,
-        email: this.props.cardEmail,
-        userId: this.props.user.userId,
-      });
-    }
-    let cardAlreadyAdded = false;
-    this.props.userCards.forEach((item) => {
-      if (card.number.split(' ').join('') === item.cardNumber) {
-        cardAlreadyAdded = true;
-      }
-    });
-
-    if (!cardAlreadyAdded) {
-      this.props.addCard({
-        ...card,
-        email: this.props.cardEmail,
-        userId: this.props.user.userId,
-      });
-      return;
-    } else {
-      Alert.alert(
-        'Card Already Used',
-        'This card have been added to your card list',
-      );
-    }
+    this.props.book(this.props.location);
+    Navigation.popToRoot(this.props.componentId);
+    Alert.alert('', 'Reservation Booked successfully');
   }
 
   validateCard(value: any) {
@@ -234,16 +221,16 @@ class CreditCard extends React.Component<Props> {
         <View style={styles.flexContainer} />
         <View style={styles.noteChargesContainer}>
           <Text style={styles.noteChargesText}>
-            Dan sako will charge your account #50 a small amount to confirm your
-            card details. this amount will serve as discount for your first
-            delivery when you use the card.
+            You accout will be charged an amount of ₦
+            {helperFuncs.formatAmountWithComma(this.getFigure())} for the
+            booking.
           </Text>
           <Text style={styles.learnMoreText}>Learn More</Text>
         </View>
 
         <Text />
         <Button
-          onPress={() => this.addCard(this.validCard)}
+          onPress={() => this.addCard()}
           disabled={
             !this.props.addCardEnabled ||
             this.props.addCreditCardStatus ===
@@ -267,7 +254,7 @@ class CreditCard extends React.Component<Props> {
             name="credit-card"
           />
           <Text uppercase={false} style={styles.addCardText}>
-            Add Card
+            Book Now
           </Text>
           {this.props.addCreditCardStatus ===
             AddCreditCard.ADD_CREDEIT_CARD_STARTED && (

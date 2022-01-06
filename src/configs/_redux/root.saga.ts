@@ -29,7 +29,7 @@ export default function* rootSaga() {
     UserSaga.watchUserLocation(),
     UserSaga.watchSetProfilePics(),
     UserSaga.watchSetLocationDetails(),
-
+    UserSaga.watchBook(),
     //lang
 
     LangSaga.ChangeLanguage(),
