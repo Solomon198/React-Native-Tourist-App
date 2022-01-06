@@ -146,6 +146,8 @@ function* watchResetInputs() {
 function* watchBook() {
   yield takeEvery(Book.BOOK_CALLER, function* (action: any) {
     yield put({type: Book.BOOK_PLACE, payload: action.payload});
+    Navigation.popToRoot(NavigationScreens.CREDIT_CARD);
+    Alert.alert('', 'Reservation Booked successfully');
   });
 }
 

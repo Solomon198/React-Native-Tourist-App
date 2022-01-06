@@ -10,8 +10,6 @@ import {
 } from 'react-native';
 import {
   Container,
-  Input,
-  Item,
   Body,
   H3,
   Fab,
@@ -585,6 +583,7 @@ class Dashboard extends React.Component<Props> {
     Navigation.push(this.props.componentId, {
       component: {
         name: name,
+        id: name,
         passProps: {
           ...payload,
         },

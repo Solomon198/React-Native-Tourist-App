@@ -67,7 +67,7 @@ function UserReducer(state = initialState, action: any) {
     case Book.BOOK_PLACE: {
       const Bookings: any[] = state.Bookings;
       Bookings.unshift(action.payload);
-      state = {...state, Bookings};
+      state = {...state, Bookings: [...Bookings]};
       return state;
     }
     case GetUsersParcel.GET_PARCEL_STARTED: {

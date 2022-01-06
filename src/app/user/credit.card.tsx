@@ -156,8 +156,6 @@ class CreditCard extends React.Component<Props> {
       return this.setState({error: error.details[0].message});
     }
     this.props.book(this.props.location);
-    Navigation.popToRoot(this.props.componentId);
-    Alert.alert('', 'Reservation Booked successfully');
   }
 
   validateCard(value: any) {
