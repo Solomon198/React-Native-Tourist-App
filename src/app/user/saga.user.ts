@@ -12,7 +12,6 @@ import {
   RemoveCreditCard,
   GetCreditCards,
   GetUsersParcel,
-  Book,
 } from '../../configs/global.enum';
 import {appUrl} from '../../configs/globals.config';
 import axios from 'axios';
@@ -62,15 +61,25 @@ function* watchSetActiveInput() {
 const getPlace = async (searchString: string) => {
   try {
     let result = await RNGooglePlaces.getAutocompletePredictions(searchString, {
-      type: 'address',
       country: 'NG',
     });
+
+    console.log(result);
 
     return result;
   } catch (e) {
     return e;
   }
 };
+
+function* watchSetReciepts() {
+  yield takeLeading(
+    inputActionType.SET_RECIEPTS_CALLER,
+    function* (action: any) {
+      yield put({type: inputActionType.SET_RECIEPTS, payload: action.payload});
+    },
+  );
+}
 
 function* watchSearchLocation() {
   yield takeEvery(
@@ -79,6 +88,7 @@ function* watchSearchLocation() {
       try {
         yield put({type: searchLocation.SEARCH_LOCATION_STARTED});
         const getPlaces: any = yield call(getPlace.bind(null, action.payload));
+        console.log(getPlaces);
         yield put({
           type: searchLocation.SEARCH_LOCATION_SUCCESS,
           payload: getPlaces,
@@ -98,7 +108,7 @@ const getPlaceDetails = async (placeID: string) => {
       'name',
       'address',
     ]);
-
+    console.log(result);
     return result;
   } catch (e) {
     return e;
@@ -143,14 +153,6 @@ function* watchResetInputs() {
   });
 }
 
-function* watchBook() {
-  yield takeEvery(Book.BOOK_CALLER, function* (action: any) {
-    yield put({type: Book.BOOK_PLACE, payload: action.payload});
-    Navigation.popToRoot(NavigationScreens.CREDIT_CARD);
-    Alert.alert('', 'Reservation Booked successfully');
-  });
-}
-
 function* watchSetDistanceAndDuration() {
   yield takeEvery(
     inputActionType.SET_DURATION_AND_DISTANCE_CALLER,
@@ -163,37 +165,36 @@ function* watchSetDistanceAndDuration() {
   );
 }
 
-const getCurrentLocation = async (types: string) => {
+const getCurrentLocation = async () => {
   try {
-    const getLocations = await axios.get(
-      `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=10.5191,7.4520&radius=1250000&types=${types}&key=AIzaSyCtd3Y6goIZCbYwzPPZeIPLKn-Fwd7bW6Y`,
-    );
-    return getLocations.data.results;
+    let result = await RNGooglePlaces.getCurrentPlace([
+      'placeID',
+      'location',
+      'name',
+      'address',
+    ]);
+
+    return result;
   } catch (e) {
     return e;
   }
 };
 
 function* watchGetCurrentLocation() {
-  yield takeEvery(
-    currentLocation.GET_CUURENT_LOCATION_CALLER,
-    function* (action: any) {
-      try {
-        yield put({type: currentLocation.GET_CUURENT_LOCATION_STARTED});
+  yield takeEvery(currentLocation.GET_CUURENT_LOCATION_CALLER, function* () {
+    try {
+      yield put({type: currentLocation.GET_CUURENT_LOCATION_STARTED});
 
-        const getPlaces: any = yield call(
-          getCurrentLocation.bind(null, action.payload),
-        );
+      const getPlaces: any = yield call(getCurrentLocation.bind(null));
 
-        yield put({
-          type: currentLocation.GET_CUURENT_LOCATION_SUCCESS,
-          payload: getPlaces,
-        });
-      } catch (e) {
-        yield put({type: currentLocation.GET_CUURENT_LOCATION_FAILED});
-      }
-    },
-  );
+      yield put({
+        type: currentLocation.GET_CUURENT_LOCATION_SUCCESS,
+        payload: getPlaces,
+      });
+    } catch (e) {
+      yield put({type: currentLocation.GET_CUURENT_LOCATION_FAILED});
+    }
+  });
 }
 
 function* watchEnableAddCreditCardBtn() {
@@ -579,7 +580,6 @@ function* watchGetUserParcels() {
 }
 
 export default {
-  watchBook,
   watchGetCreditCards,
   setCardEmail,
   watchSetLocationDetails,
@@ -605,4 +605,6 @@ export default {
   watchSetDistanceAndDuration,
   watchGetCurrentLocation,
   watchSetVariables,
+
+  watchSetReciepts,
 };

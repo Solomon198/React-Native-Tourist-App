@@ -94,7 +94,7 @@ class SideMenu extends React.Component<Props> {
           <View>
             <View style={styles.titleContainer}>
               <Title style={styles.userName}>
-                {this.props.user.firtName + ' ' + this.props.user.lastName}
+                {this.props.user.firstName + ' ' + this.props.user.lastName}
               </Title>
             </View>
 
@@ -110,17 +110,13 @@ class SideMenu extends React.Component<Props> {
               this.navigate(NavigationScreens.PARCEL_MANAGER_SCREEN)
             }
             style={styles.menuItems}>
-            <Icon
-              style={styles.menuIcon}
-              type="MaterialIcons"
-              name="drive-eta"
-            />
+            <Icon style={styles.menuIcon} type="Entypo" name="book" />
             <Body>
-              <Text style={styles.menuText}>Drive history</Text>
+              <Text style={styles.menuText}>Reciepts</Text>
             </Body>
           </ListItem>
 
-          <ListItem
+          {/* <ListItem
             onPress={() =>
               this.navigate(NavigationScreens.PAYMENT_OPTION_SCREEN)
             }
@@ -129,7 +125,7 @@ class SideMenu extends React.Component<Props> {
             <Body>
               <Text style={styles.menuText}>Payments</Text>
             </Body>
-          </ListItem>
+          </ListItem> */}
 
           {/* <ListItem style={styles.menuItems}>
             <Icon

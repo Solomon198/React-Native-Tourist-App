@@ -129,11 +129,11 @@ class PaymentOptions extends React.Component<Props> {
               this.props.RemoveValidCard(card);
             },
           ),
-        text: 'REMOVE CARD',
+        text: 'Yes',
       },
       {
         onPress: () => '',
-        text: 'CANCEL',
+        text: 'No',
       },
     ]);
   }

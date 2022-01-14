@@ -169,9 +169,8 @@ class Login extends React.Component<Props> {
 
   login() {
     this.props.login({
-      phoneNumber: this.props.loginPhoneNumber,
+      email: this.props.loginPhoneNumber,
       password: this.props.loginPassword,
-      countryCode: 'NG',
     });
   }
 
@@ -183,20 +182,20 @@ class Login extends React.Component<Props> {
     return (
       <SafeAreaView style={styles.flexContainer}>
         <StatusBar backgroundColor={StyleConfig.Brand.brandColor} />
-        <Components.WaveHeader
+        {/* <Components.WaveHeader
           customStyles={styles.svgCurve}
           customHeight={210}
           customTop={160}
           customBgColor={StyleConfig.Brand.brandColor}
           customWavePattern="M0,160L48,154.7C96,149,192,139,288,149.3C384,160,480,192,576,218.7C672,245,768,267,864,277.3C960,288,1056,288,1152,266.7C1248,245,1344,203,1392,181.3L1440,160L1440,0L1392,0C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z"
-        />
+        /> */}
         <View style={styles.flexContainer}>
-          <View style={styles.logoContainer}>
+          {/* <View style={styles.logoContainer}>
             <Image
               source={require('../../../assets/media/images/logo.png')}
               style={styles.logo}
             />
-          </View>
+          </View> */}
           <Container style={styles.mainContainer}>
             {this.props.errorLogin ? (
               <View style={styles.errorContainer}>
@@ -207,9 +206,8 @@ class Login extends React.Component<Props> {
             <TextInput
               editable={!loginStarted}
               value={this.props.loginPhoneNumber}
-              placeholder={loginText.PHONE_INPUT_PLACE_HOLDER}
+              placeholder={'Email Address'}
               style={[StyleConfig.Components.InputStyles, styles.inputExtended]}
-              keyboardType="number-pad"
               onChangeText={(text) => this.props.setPhoneNumber(text)}
             />
 
@@ -248,13 +246,13 @@ class Login extends React.Component<Props> {
               </Text>
             </Button>
 
-            <TouchableOpacity
+            {/* <TouchableOpacity
               disabled={loginStarted}
               onPress={() => this.resetPassword()}>
               <Text style={[styles.title, styles.ressetBtn]}>
                 {loginText.FORGET_PASSWORD_TEXT}
               </Text>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
           </Container>
         </View>
       </SafeAreaView>

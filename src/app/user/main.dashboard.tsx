@@ -1,15 +1,9 @@
 import React from 'react';
-import {
-  View,
-  StyleSheet,
-  Keyboard,
-  Image,
-  Alert,
-  Modal,
-  TouchableOpacity,
-} from 'react-native';
+import {View, StyleSheet, Keyboard, Image, Alert, Modal} from 'react-native';
 import {
   Container,
+  Input,
+  Item,
   Body,
   H3,
   Fab,
@@ -19,8 +13,6 @@ import {
   ListItem,
   Left,
   H1,
-  Header,
-  Title,
 } from 'native-base';
 import Colors from '../../configs/styles/index';
 import {toggleSideMenu} from './navigations.actions';
@@ -53,7 +45,6 @@ import {
   NotificationCompletion,
   Notification,
 } from 'react-native-notifications';
-import SplashScreen from 'react-native-splash-screen';
 
 const mapStateToProps = (store: any) => ({
   currentLocationPrediction: store.User.currentLocation,
@@ -68,8 +59,8 @@ const mapStateToProps = (store: any) => ({
 });
 
 const mapDispatchStateToProps = (dispatch: any) => ({
-  getCurrentLocation: (payload: any) =>
-    dispatch({type: currentLocation.GET_CUURENT_LOCATION_CALLER, payload}),
+  getCurrentLocation: () =>
+    dispatch({type: currentLocation.GET_CUURENT_LOCATION_CALLER}),
   selectedLocation: (location: any) =>
     dispatch({
       type: setLocation.SET_LOCATION_CALLER,
@@ -126,7 +117,7 @@ type coords = {longitude: number; latitude: number};
 
 type Props = {
   componentId: string;
-  currentLocationPrediction: any[];
+  currentLocationPrediction: currentLocationObj[];
   currentLocationStatus: string;
   activeDelivery: parcelInProgress;
   user: User;
@@ -135,7 +126,7 @@ type Props = {
   confirmDeliveryStatus: string;
   watchPosition: coords;
   deliveryDeleted: boolean;
-  getCurrentLocation: (payload: string) => void;
+  getCurrentLocation: () => void;
   selectedLocation: (location: any) => void;
   setActiveDelivery: (payload: any, driver: any, discard?: boolean) => void;
   cancelDelivery: (parcelId: string) => void;
@@ -144,18 +135,6 @@ type Props = {
 };
 
 const styles = StyleSheet.create({
-  icon: {color: 'gray'},
-  iconStyle: {
-    width: 50,
-    height: 50,
-    borderRadius: 100,
-    borderColor: 'lightgray',
-    borderWidth: 1,
-    backgroundColor: 'whitesmoke',
-    justifyContent: 'center',
-    alignContent: 'center',
-    alignItems: 'center',
-  },
   searchingTextStyle: {marginVertical: 5},
   spinKitContainer: {
     alignContent: 'center',
@@ -174,7 +153,7 @@ const styles = StyleSheet.create({
     marginVertical: 10,
   },
   fab: {
-    backgroundColor: '#fff',
+    backgroundColor: Colors.Brand.brandColor,
   },
   currentLocationSelect: {
     backgroundColor: Colors.Brand.brandColor,
@@ -208,7 +187,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.9,
     shadowRadius: 10,
     elevation: 15,
-    paddingHorizontal: 10,
+    paddingHorizontal: 30,
     paddingBottom: 20,
   },
   mainContainer: {
@@ -291,6 +270,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#f4f4f4',
     paddingLeft: 10,
     borderRadius: 50,
+    marginTop: 10,
+    paddingVertical: 10,
   },
   searchIcon: {color: '#999'},
   pickUpLocationCaption: {color: '#555', fontWeight: 'bold'},
@@ -316,15 +297,14 @@ class Dashboard extends React.Component<Props> {
   mapRef: any;
   driverInfo: any;
   trackerListener: any;
+  activeDeliveries = firestore()
+    .collection(firebasePaths.ACTIVE_DELIVERIES)
+    .where('parcelOwner', '==', this.props.user.userId);
 
   rideHistories = firestore().collection(firebasePaths.PARCEL_HISTORIES);
   driver = firestore().collection(firebasePaths.DRIVERS);
   watchDriver: any;
-  state = {
-    showLocations: false,
-    header: '',
-    showInitScreen: false,
-  };
+
   //gets the current location of the user
   async getCurrentPosition() {
     const permission = await Utils.Permissions.RequestLocationPermissions();
@@ -451,21 +431,21 @@ class Dashboard extends React.Component<Props> {
   }
 
   //gets the driver information when delivery enters the active mode and handles both failure and success to avoid multiple redundant reads
-  async getDriverInfo(parcel: parcelInProgress) {
+  async getDriverInfo(parcel: parcelInProgress, discard?: boolean) {
     try {
       if (!parcel) {
-        this.props.setActiveDelivery(null, null);
+        this.props.setActiveDelivery(null, null, discard);
         this.getCurrentPosition();
       } else {
         if (this.props.driver) {
-          this.props.setActiveDelivery(parcel, this.props.driver);
+          this.props.setActiveDelivery(parcel, this.props.driver, discard);
         } else {
           let driver = await this.driver.doc(parcel.parcelPicker).get();
           let data = driver.data();
           if (data) {
             data.id = driver.id;
           }
-          this.props.setActiveDelivery(parcel, data);
+          this.props.setActiveDelivery(parcel, data, discard);
         }
       }
     } catch (e) {}
@@ -523,45 +503,8 @@ class Dashboard extends React.Component<Props> {
     );
   }
 
-  getPredictions(param: string, onLunch?: boolean) {
-    this.setState({
-      header:
-        param === 'lodging' ? 'hotels' : (param + 's').split('_').join(' '),
-      showLocations: onLunch ? false : true,
-    });
-    this.props.getCurrentLocation(param);
-  }
-
   //mounts the current component
   async componentDidMount() {
-    firestore()
-      .collection('Applications')
-      .doc('kad-tour')
-      .onSnapshot((data) => {
-        const appData = data.data();
-        if (!appData.active) {
-          SplashScreen.show();
-
-          // this.setState({showInitScreen: true}, () => {
-          //   Navigation.mergeOptions(this.props.componentId, {
-          //     bottomTabs: {
-          //       visible: false,
-          //     },
-          //   });
-          // });
-        } else {
-          SplashScreen.hide();
-
-          // this.setState({showInitScreen: false});
-          // Navigation.mergeOptions(this.props.componentId, {
-          //   bottomTabs: {
-          //     visible: true,
-          //   },
-          // });
-        }
-      });
-    this.registerNotificationListeners();
-    // this.getPredictions('lodging', true);
     try {
       this.getCurrentPosition();
     } catch (e) {}
@@ -579,13 +522,13 @@ class Dashboard extends React.Component<Props> {
     }
   }
 
-  navigate(name: string, payload: any) {
+  navigate(name: string) {
     Navigation.push(this.props.componentId, {
       component: {
         name: name,
-        id: name,
         passProps: {
-          ...payload,
+          longitude: this.props.watchPosition.longitude,
+          latitude: this.props.watchPosition.latitude,
         },
       },
     });
@@ -606,8 +549,8 @@ class Dashboard extends React.Component<Props> {
 
   cancelDelivery(parcelId: string) {
     Alert.alert('', 'Are you sure you want to cancel pickup ? ', [
-      {onPress: () => this.props.cancelDelivery(parcelId), text: 'Confirm'},
-      {onPress: () => '', text: 'Cancel'},
+      {onPress: () => this.props.cancelDelivery(parcelId), text: 'Yes'},
+      {onPress: () => '', text: 'No'},
     ]);
   }
 
@@ -616,8 +559,8 @@ class Dashboard extends React.Component<Props> {
       '',
       'Are you sure you want to confirm parcel have been delivered ? ',
       [
-        {onPress: () => this.props.confirmDelivery(parcelId), text: 'Confirm'},
-        {onPress: () => '', text: 'Cancel'},
+        {onPress: () => this.props.confirmDelivery(parcelId), text: 'Yes'},
+        {onPress: () => '', text: 'No'},
       ],
     );
   }
@@ -649,408 +592,132 @@ class Dashboard extends React.Component<Props> {
     );
   }
 
-  async saveToken(token: string) {}
+  async saveToken(token: string) {
+    let admin = firestore()
+      .collection(firebasePaths.USERS)
+      .doc(this.props.user.userId);
+    admin
+      .set({
+        token: firestore.FieldValue.arrayUnion(token),
+        photo: this.props.user.photo,
+        firstName: this.props.user.firtName,
+        lastName: this.props.user.lastName,
+      })
+      .catch((e) => {});
+  }
 
   render() {
-    if (this.state.showInitScreen) {
-      return <Text></Text>;
-    }
-    const baseImage =
-      'https://images.unsplash.com/photo-1552334405-4929565998d5?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=1050&q=80';
-    const loading =
-      this.props.currentLocationStatus ===
-      currentLocation.GET_CUURENT_LOCATION_STARTED;
     return (
       <Container style={styles.mainContainer}>
+        {this.renderCancelingPickUp()}
+        {this.renderConfirmingDelivery()}
         <View style={styles.container}>
-          {this.state.showLocations && (
-            <View style={{flex: 1, backgroundColor: '#fff'}}>
-              <Header hasTabs style={{backgroundColor: '#fff'}}>
-                <Left style={{maxWidth: 200}}>
-                  <Button
-                    onPress={() => this.setState({showLocations: false})}
-                    iconLeft
-                    dark
-                    style={{borderRadius: 10, borderColor: '#e8e8e8'}}
-                    bordered>
-                    <Icon
-                      style={{color: 'red'}}
-                      name="map-marker"
-                      type="MaterialCommunityIcons"
-                    />
-                    <Text uppercase={false}>Go to Map</Text>
-                  </Button>
-                </Left>
-                <Body style={{alignItems: 'center', justifyContent: 'center'}}>
-                  <Title
-                    style={{
-                      color: '#666',
-                      fontWeight: 'bold',
-                      textTransform: 'capitalize',
-                    }}>
-                    {this.state.header}
-                  </Title>
-                </Body>
-              </Header>
+          <MapView
+            ref={(ref) => (this.mapRef = ref)}
+            provider={PROVIDER_GOOGLE} // remove if not using Google Maps
+            style={styles.map}
+            region={{
+              latitude: this.props.activeDelivery
+                ? this.props.activeDelivery.parcelLocation[1]
+                : this.props.watchPosition.latitude,
 
-              {loading && (
-                <SpinKit
-                  style={{alignSelf: 'center', marginVertical: 10}}
-                  type="Circle"
-                  size={50}
+              longitude: this.props.activeDelivery
+                ? this.props.activeDelivery.parcelLocation[0]
+                : this.props.watchPosition.longitude,
+              latitudeDelta: 0.015,
+              longitudeDelta: 0.0121,
+            }}>
+            {this.props.activeDelivery && (
+              <>
+                <MapViewDirections
+                  origin={this.getActiveDeliveryPickUpLocation()}
+                  destination={this.getActiveDeliveryDestinationLocation()}
+                  apikey={API_KEY}
+                  strokeWidth={3}
+                  strokeColor={Colors.Brand.brandColor}
                 />
-              )}
-              <FlatList
-                data={this.props.currentLocationPrediction}
-                renderItem={({item}) => (
-                  <View
-                    style={{
-                      marginHorizontal: 10,
-                      borderColor: 'lightgray',
-                      borderWidth: 1,
-                      borderRadius: 10,
-                      marginBottom: 20,
-                    }}>
-                    <Image
-                      style={{width: null, height: 300, borderRadius: 10}}
-                      source={{
-                        uri:
-                          item.photos?.length > 0
-                            ? `https://maps.googleapis.com/maps/api/place/photo?photoreference=${item.photos[0].photo_reference}&sensor=false&maxheight=${item.photos[0].height}&maxwidth=${item.photos[0].width}&key=${API_KEY}`
-                            : baseImage,
-                      }}
-                    />
-                    <View
-                      style={{
-                        padding: 10,
-                        flexDirection: 'row',
-                        justifyContent: 'space-between',
-                      }}>
-                      <View style={{maxWidth: 250}}>
-                        <Text style={{fontSize: 12, fontWeight: 'bold'}}>
-                          Location name
-                        </Text>
-                        <Text>{item.name}</Text>
-                      </View>
-                      <View style={{minWidth: 100}}>
-                        <Button
-                          danger
-                          onPress={() =>
-                            this.navigate(NavigationScreens.CREDIT_CARD, {
-                              location: item,
-                              header: this.state.header,
-                            })
-                          }
-                          style={{borderRadius: 10, alignSelf: 'flex-end'}}>
-                          <Text uppercase={false}>Book</Text>
-                        </Button>
-                      </View>
-                    </View>
-                    <Text
-                      style={{
-                        paddingHorizontal: 10,
-                        marginVertical: 5,
-                        fontSize: 15,
-                      }}>
-                      {item.vicinity}
-                    </Text>
-                  </View>
-                )}
-              />
-            </View>
-          )}
-          {!this.state.showLocations && (
-            <MapView
-              ref={(ref) => (this.mapRef = ref)}
-              provider={PROVIDER_GOOGLE} // remove if not using Google Maps
-              style={styles.map}
-              region={{
-                latitude: this.props.activeDelivery
-                  ? this.props.activeDelivery.parcelLocation[1]
-                  : this.props.watchPosition.latitude,
-
-                longitude: this.props.activeDelivery
-                  ? this.props.activeDelivery.parcelLocation[0]
-                  : this.props.watchPosition.longitude,
-                latitudeDelta: 0.015,
-                longitudeDelta: 0.0121,
-              }}>
-              {this.props.activeDelivery && (
-                <>
-                  <MapViewDirections
-                    origin={this.getActiveDeliveryPickUpLocation()}
-                    destination={this.getActiveDeliveryDestinationLocation()}
-                    apikey={API_KEY}
-                    strokeWidth={3}
-                    strokeColor={Colors.Brand.brandColor}
-                  />
-                  <Marker
-                    title={
-                      this.props.activeDelivery.parcelLocationPhysicalAddress
-                    }
-                    coordinate={this.getActiveDeliveryPickUpLocation()}
-                    pinColor={Colors.Brand.brandColor}
-                  />
-
-                  <Marker
-                    title={
-                      this.props.activeDelivery.parcelDestinationPhysicalAddress
-                    }
-                    coordinate={this.getActiveDeliveryDestinationLocation()}
-                  />
-
-                  {this.props.currentLocationPrediction.map((val: any) => (
-                    <Marker coordinate={val.geometry}>
-                      <View style={styles.driverMarker}>
-                        <Icon
-                          name="drive-eta"
-                          type="MaterialIcons"
-                          style={styles.driverMarkerIcon}
-                        />
-                      </View>
-                    </Marker>
-                  ))}
-                </>
-              )}
-              {!this.props.activeDelivery && (
                 <Marker
-                  coordinate={{
-                    latitude: this.props.watchPosition.latitude,
-                    longitude: this.props.watchPosition.longitude,
-                  }}>
-                  <Image
-                    resizeMode="contain"
-                    style={styles.imgUserLocation}
-                    source={require('../../../assets/media/images/marker.png')}
-                  />
-                </Marker>
-              )}
-            </MapView>
-          )}
+                  title={
+                    this.props.activeDelivery.parcelLocationPhysicalAddress
+                  }
+                  coordinate={this.getActiveDeliveryPickUpLocation()}
+                  pinColor={Colors.Brand.brandColor}
+                />
+
+                <Marker
+                  title={
+                    this.props.activeDelivery.parcelDestinationPhysicalAddress
+                  }
+                  coordinate={this.getActiveDeliveryDestinationLocation()}
+                />
+
+                {this.props.activeDelivery && this.props.driver && (
+                  <Marker
+                    coordinate={{
+                      latitude: this.props.driver.lat,
+                      longitude: this.props.driver.lng,
+                    }}>
+                    <View style={styles.driverMarker}>
+                      <Icon
+                        name="drive-eta"
+                        type="MaterialIcons"
+                        style={styles.driverMarkerIcon}
+                      />
+                    </View>
+                  </Marker>
+                )}
+              </>
+            )}
+            {!this.props.activeDelivery && (
+              <Marker
+                coordinate={{
+                  latitude: this.props.watchPosition.latitude,
+                  longitude: this.props.watchPosition.longitude,
+                }}>
+                <Image
+                  resizeMode="contain"
+                  style={styles.imgUserLocation}
+                  source={require('../../../assets/media/images/marker.png')}
+                />
+              </Marker>
+            )}
+          </MapView>
           <View style={styles.suggestion}>
             <View style={styles.enlargeIndicator} />
 
-            {this.props.activeDelivery && (
-              <View>
-                {!this.props.deliveryDeleted && (
-                  <ListItem>
-                    <Left style={styles.left}>
-                      <Avatar
-                        containerStyle={styles.avatar}
-                        source={{
-                          uri: this.props.driver ? this.props.driver.photo : '',
-                        }}
-                      />
-                    </Left>
-                    <Body>
-                      <H3 style={styles.driverNameStyle}>
-                        {`${
-                          this.props.driver
-                            ? this.props.driver.firstName +
-                              ' ' +
-                              this.props.driver.lastName
-                            : ''
-                        }`}
-                      </H3>
-                      {this.props.activeDelivery.parcelStatus ===
-                        ParcelStatus.NOT_PICKED && (
-                        <View>
-                          <Text style={styles.parcelPicked}>
-                            Parcel Not picked
-                          </Text>
-                        </View>
-                      )}
+            {!this.props.activeDelivery && (
+              <>
+                <H3 style={styles.descLocation}>
+                  Welcome to Kaduna {this.props.user.firstName}
+                </H3>
+                <Text>
+                  You can search for different location you want to visit{' '}
+                </Text>
 
-                      {this.props.activeDelivery.parcelStatus ===
-                        ParcelStatus.IN_PROGRESS && (
-                        <View>
-                          <Text style={styles.inProgressText}>
-                            Delivery in progress
-                          </Text>
-                        </View>
-                      )}
-
-                      {this.props.activeDelivery.parcelStatus ===
-                        ParcelStatus.PICKUP_DELIVERED && (
-                        <View>
-                          <Text style={styles.deliveredParcel}>
-                            Parcel Delivered
-                          </Text>
-                        </View>
-                      )}
-                    </Body>
-                    {this.props.activeDelivery.parcelStatus ===
-                      ParcelStatus.NOT_PICKED && (
-                      <Icon
-                        name="drive-eta"
-                        type="MaterialIcons"
-                        style={styles.icoDanger}
-                      />
-                    )}
-
-                    {this.props.activeDelivery.parcelStatus ===
-                      ParcelStatus.IN_PROGRESS && (
-                      <Icon
-                        name="drive-eta"
-                        type="MaterialIcons"
-                        style={styles.icoWarning}
-                      />
-                    )}
-
-                    {this.props.activeDelivery.parcelStatus ===
-                      ParcelStatus.PICKUP_DELIVERED && (
-                      <Icon
-                        name="drive-eta"
-                        type="MaterialIcons"
-                        style={styles.icoSuccess}
-                      />
-                    )}
-                  </ListItem>
-                )}
-
-                <ListItem>
-                  <Left style={styles.left}>
-                    <Icon
-                      type="FontAwesome5"
-                      name="map-pin"
-                      style={{color: Colors.Brand.brandColor}}
-                    />
-                  </Left>
-                  <Body>
-                    <Text style={styles.label}>Pick-Up Location</Text>
-                    <Text style={styles.locationString}>
-                      {this.props.activeDelivery.parcelLocationPhysicalAddress}
-                    </Text>
-                  </Body>
-                </ListItem>
-                <ListItem last noBorder>
-                  <Left style={styles.left}>
-                    <Icon name="pin" type="Entypo" style={styles.icoDanger} />
-                  </Left>
-                  <Body>
-                    <Text style={styles.label}>Destination</Text>
-                    <Text style={styles.locationString}>
-                      {
-                        this.props.activeDelivery
-                          .parcelDestinationPhysicalAddress
-                      }
-                    </Text>
-                  </Body>
-                </ListItem>
-
-                {this.props.deliveryDeleted && (
-                  <Text
-                    style={{
-                      marginLeft: 20,
-                      fontSize: 15,
-                      fontWeight: '600',
-                      color: 'red',
-                      marginBottom: 2,
-                      marginRight: 20,
-                    }}>
-                    Delivery have been cancelled. you can cancel or assign to
-                    another driver.{' '}
-                  </Text>
-                )}
-                {this.props.deliveryDeleted && (
-                  <View style={{flexDirection: 'row', marginHorizontal: 20}}>
-                    <View style={{flex: 1, marginRight: 2}}>
-                      <Button
-                        onPress={() => this.handleDialogCancelDelivery()}
-                        style={{borderRadius: 10}}
-                        danger
-                        block>
-                        <Text uppercase={false}>Discard</Text>
-                      </Button>
-                    </View>
-                    <View style={{flex: 1}}>
-                      <Button
-                        onPress={() => this.searchPickUp()}
-                        style={{
-                          backgroundColor: Colors.Brand.brandColor,
-                          borderRadius: 10,
-                        }}
-                        block>
-                        <Text uppercase={false}>Assign</Text>
-                      </Button>
-                    </View>
-                  </View>
-                )}
-                {this.props.activeDelivery.parcelStatus ===
-                  ParcelStatus.NOT_PICKED &&
-                  !this.props.deliveryDeleted && (
-                    <Fab
-                      active={true}
-                      style={styles.fabCancelDelivery}
-                      position="bottomRight"
-                      onPress={() =>
-                        this.cancelDelivery(this.props.activeDelivery.id)
-                      }>
-                      <Icon style={styles.icoWhite} name="close" />
-                    </Fab>
-                  )}
-
-                {this.props.activeDelivery.parcelStatus ===
-                  ParcelStatus.PICKUP_DELIVERED && (
-                  <Fab
-                    active={true}
-                    style={styles.fabSuccessDelivery}
-                    position="bottomRight"
-                    onPress={() =>
-                      this.confirmDelivery(this.props.activeDelivery.id)
-                    }>
-                    <Icon style={styles.icoWhite} name="checkmark" />
-                  </Fab>
-                )}
-              </View>
-            )}
-
-            {this.props.currentLocationStatus === 'started' &&
-              !this.props.activeDelivery && (
-                <View style={styles.spinKitContainer}>
-                  <SpinKit
-                    color={Colors.Brand.brandColor}
-                    type="Circle"
-                    size={40}
+                <Item
+                  onPress={() =>
+                    this.navigate(NavigationScreens.CREATE_PARCEL_SCREEN)
+                  }
+                  bordered={false}
+                  style={styles.inputSearchLocation}>
+                  <Icon style={styles.searchIcon} active name="search" />
+                  <Input
+                    placeholderTextColor="#aaa"
+                    disabled
+                    placeholder="Search location"
                   />
-                </View>
-              )}
-
-            <View style={{flexDirection: 'row'}}>
-              <TouchableOpacity
-                onPress={() => this.getPredictions('lodging')}
-                style={{alignItems: 'center', flexGrow: 1}}>
-                <View style={styles.iconStyle}>
-                  <Icon style={styles.icon} name="hotel" type="MaterialIcons" />
-                </View>
-                <Text style={{fontSize: 10}}>Hotels</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => this.getPredictions('restaurant')}
-                style={{alignItems: 'center', flexGrow: 1}}>
-                <View style={styles.iconStyle}>
-                  <Icon style={styles.icon} name="restaurant" />
-                </View>
-                <Text style={{fontSize: 10}}>Restaurants</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => this.getPredictions('tourist_attraction')}
-                style={{alignItems: 'center', flexGrow: 1}}>
-                <View style={styles.iconStyle}>
-                  <Icon style={styles.icon} name="cab" type="FontAwesome" />
-                </View>
-                <Text style={{fontSize: 10}}>Tourist attraction</Text>
-              </TouchableOpacity>
-            </View>
+                </Item>
+              </>
+            )}
           </View>
 
-          {/* <Fab
+          <Fab
             active={true}
             style={styles.fab}
             position="topLeft"
             onPress={() => toggleSideMenu(true, this.props.componentId)}>
-            <Icon style={{color: Colors.Brand.brandColor}} name="menu" />
-          </Fab> */}
+            <Icon style={{color: '#fff'}} name="menu" />
+          </Fab>
         </View>
       </Container>
     );

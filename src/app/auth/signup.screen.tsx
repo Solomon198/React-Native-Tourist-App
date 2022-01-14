@@ -78,12 +78,11 @@ class SignUp extends React.Component<Props> {
 
   signUp() {
     let payload = {
-      phoneNumber: this.props.phoneNumber,
+      email: this.props.phoneNumber,
       firstName: this.props.firstName,
       lastName: this.props.lastName,
       gender: this.props.gender,
       password: this.props.password,
-      countryCode: 'NG',
     };
 
     this.props.signUp(payload);
@@ -106,7 +105,7 @@ class SignUp extends React.Component<Props> {
             style={styles.header}>
             <Body />
             <Right>
-              <Button
+              {/* <Button
                 iconLeft
                 onPress={() => this.login()}
                 rounded
@@ -123,7 +122,7 @@ class SignUp extends React.Component<Props> {
                 <Text style={styles.loginText} uppercase={false}>
                   {langText.LoginScreen.LOGIN_BUTTON_TEXT}
                 </Text>
-              </Button>
+              </Button> */}
             </Right>
           </Header>
           <ScrollView style={styles.mainContainer}>
@@ -159,9 +158,8 @@ class SignUp extends React.Component<Props> {
             </View>
 
             <TextInput
-              placeholder={signupText.INPUT_PLACEHOLDER_PHONE_NUMBER}
+              placeholder={'Email Address'}
               value={this.props.phoneNumber}
-              keyboardType="number-pad"
               onChangeText={(text) => this.props.setPhoneNumber(text)}
               style={StylesConfig.Components.InputStyles}
             />

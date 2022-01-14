@@ -13,9 +13,6 @@ import {AuthNavigationSettingStack, User} from './nav.config/nav.stack';
 import RNPaystack from 'react-native-paystack';
 import {PAYSTACK_PUBLIC} from 'react-native-dotenv';
 import SplashScreen from 'react-native-splash-screen';
-import firestore from '@react-native-firebase/firestore';
-import {Navigation} from 'react-native-navigation';
-import NavigationScreens from './nav.config/navigation.screens';
 
 RNPaystack.init({
   publicKey: PAYSTACK_PUBLIC,
@@ -38,7 +35,13 @@ const mapDispatchStateToProps = () => ({
 
 class App extends React.Component<Props> {
   componentDidMount() {
-    User();
+    if (!this.props.accessToken) {
+      AuthNavigationSettingStack();
+    } else {
+      User();
+    }
+
+    SplashScreen.hide();
   }
 
   render() {

@@ -10,7 +10,6 @@ import {
   RemoveCreditCard,
   GetCreditCards,
   GetUsersParcel,
-  Book,
 } from '../../configs/global.enum';
 
 const initialState = {
@@ -59,15 +58,15 @@ const initialState = {
   gettingParcelStatus: GetUsersParcel.GET_PARCEL_DEFAULT,
   errorGettingParcel: '',
   parcels: [],
-  Bookings: [] as any[],
+  receipts: [] as any[],
 };
 
 function UserReducer(state = initialState, action: any) {
   switch (action.type) {
-    case Book.BOOK_PLACE: {
-      const Bookings: any[] = state.Bookings;
-      Bookings.unshift(action.payload);
-      state = {...state, Bookings: [...Bookings]};
+    case inputActionType.SET_RECIEPTS: {
+      const receipts = state.receipts;
+      receipts.unshift(action.payload);
+      state = {...state, receipts};
       return state;
     }
     case GetUsersParcel.GET_PARCEL_STARTED: {
@@ -250,7 +249,8 @@ function UserReducer(state = initialState, action: any) {
           deliveryDeleted: false,
         };
       } else {
-        if (state.activeDelivery && !action.discard) {
+        const decider = action.discard ? false : true;
+        if (state.activeDelivery && decider) {
           state = {
             ...state,
             deliveryDeleted: true,
@@ -368,14 +368,14 @@ function UserReducer(state = initialState, action: any) {
           ...state,
           pickUpLocation: action.payload,
           searchingLocation: searchLocation.SEARCH_LOCATION_SUCCESS,
-          locationSearchString: action.payload.address,
+          locationSearchString: action.payload.name,
         };
       } else {
         state = {
           ...state,
           pickUpDestination: action.payload,
           searchingDestination: searchLocation.SEARCH_LOCATION_SUCCESS,
-          destinationSearchString: action.payload.address,
+          destinationSearchString: action.payload.name,
         };
       }
 

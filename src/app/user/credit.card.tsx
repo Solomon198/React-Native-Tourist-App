@@ -22,14 +22,14 @@ import {Navigation} from 'react-native-navigation';
 import {connect} from 'react-redux';
 import {LiteCreditCardInput} from 'react-native-credit-card-input';
 import NavigationScreens from '../../../nav.config/navigation.screens';
-import {AddCreditCard, inputActionType, Book} from '../../configs/global.enum';
+import {AddCreditCard, inputActionType} from '../../configs/global.enum';
 import * as joi from 'react-native-joi';
 import SpinKit from 'react-native-spinkit';
 import User from '../types/user';
-import helperFuncs from '../utilities/helper.funcs';
 
 const validateEmail = joi.object({
   email: joi.string().email().required(),
+  reservation: joi.number().min(1).required().label('Reservation'),
 });
 
 const styles = StyleSheet.create({
@@ -77,9 +77,9 @@ type Props = {
   cardEmail: string;
   addCreditCardStatus: string;
   addCreditCardError: string;
-  user: User;
   location: any;
-  header: any;
+  directionInfo: any;
+  user: User;
   setCardEmail: (email: string) => void;
   addCard: (card: any) => void;
   enableAddCreditCardButton: (payload: boolean) => void;
@@ -102,12 +102,14 @@ const mapDispatchStateToProps = (dispatch: any) => ({
     dispatch({type: 'DO-ENABLE-ADD-BUTTON', payload: payload}),
   setCardEmail: (email: string) =>
     dispatch({type: inputActionType.SET_CARD_EMAIL, payload: email}),
-  book: (payload: any) => dispatch({type: Book.BOOK_CALLER, payload}),
+  book: (payload: any) =>
+    dispatch({type: inputActionType.SET_RECIEPTS_CALLER, payload}),
 });
 
 class CreditCard extends React.Component<Props> {
   state = {
     error: '',
+    reservationCount: 0,
   };
   searchPickUp() {
     Navigation.push(this.props.componentId, {
@@ -118,11 +120,6 @@ class CreditCard extends React.Component<Props> {
     });
   }
 
-  getFigure() {
-    const numb = Math.floor(Math.random() * 5000) + 1500;
-    return numb;
-  }
-
   validCard: any;
   timer: any;
 
@@ -131,7 +128,6 @@ class CreditCard extends React.Component<Props> {
   }
 
   componentDidMount() {
-    this.props.enableAddCreditCardButton(false);
     BackHandler.addEventListener('hardwareBackPress', this.handleBackAction);
   }
 
@@ -149,13 +145,30 @@ class CreditCard extends React.Component<Props> {
     return false;
   };
 
-  addCard() {
+  addCard(card: any) {
     Keyboard.dismiss();
-    const {error} = validateEmail.validate({email: this.props.cardEmail});
+    const {error} = validateEmail.validate({
+      email: this.props.cardEmail,
+      reservation: this.state.reservationCount,
+    });
     if (error) {
       return this.setState({error: error.details[0].message});
     }
-    this.props.book(this.props.location);
+
+    let payload = {
+      location: this.props.location,
+      directionInfo: this.props.directionInfo,
+      reservation: parseInt(this.state.reservationCount + ''),
+      email: this.props.cardEmail,
+    };
+
+    this.props.book(payload);
+    Navigation.push(this.props.componentId, {
+      component: {
+        name: NavigationScreens.PARCEL_MANAGER_SCREEN,
+        id: NavigationScreens.PARCEL_MANAGER_SCREEN,
+      },
+    });
   }
 
   validateCard(value: any) {
@@ -197,7 +210,7 @@ class CreditCard extends React.Component<Props> {
             autoFocus
             onChange={(values: any) => this.validateCard(values)}
             placeholders={{
-              number: 'Card PIN',
+              number: 'Card Number',
               expiry: 'MM/YY',
               cvc: 'CVC',
               email: 'email',
@@ -215,20 +228,30 @@ class CreditCard extends React.Component<Props> {
               }}
             />
           </View>
+          <View>
+            <TextInput
+              value={this.state.reservationCount}
+              style={styles.input}
+              keyboardType="number-pad"
+              placeholder="How many reservation do  you want"
+              onChangeText={(text) => {
+                this.setState({reservationCount: text});
+              }}
+            />
+          </View>
         </View>
         <View style={styles.flexContainer} />
         <View style={styles.noteChargesContainer}>
           <Text style={styles.noteChargesText}>
-            You accout will be charged an amount of ₦
-            {helperFuncs.formatAmountWithComma(this.getFigure())} for the
-            booking.
+            Kad Tour will charge your card for total number of reservation made
+            per person
           </Text>
           <Text style={styles.learnMoreText}>Learn More</Text>
         </View>
 
         <Text />
         <Button
-          onPress={() => this.addCard()}
+          onPress={() => this.addCard(this.validCard)}
           disabled={
             !this.props.addCardEnabled ||
             this.props.addCreditCardStatus ===
@@ -252,7 +275,7 @@ class CreditCard extends React.Component<Props> {
             name="credit-card"
           />
           <Text uppercase={false} style={styles.addCardText}>
-            Book Now
+            Book Reservation
           </Text>
           {this.props.addCreditCardStatus ===
             AddCreditCard.ADD_CREDEIT_CARD_STARTED && (

@@ -7,7 +7,7 @@ const InputStyles = {
   paddingVertical: 17,
   fontSize: 17,
   color: '#555',
-  borderRadius: 50,
+  borderRadius: 10,
 };
 
 const BtnStyles = {

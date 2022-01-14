@@ -9,6 +9,7 @@ import {
   Icon,
   Button,
   ListItem,
+  H1,
 } from 'native-base';
 import Colors from '../../configs/styles/index';
 import MapView, {PROVIDER_GOOGLE, Marker} from 'react-native-maps'; // remove PROVIDER_GOOGLE import if not using Google Maps
@@ -30,6 +31,11 @@ type locationDetails = {
   };
 };
 
+type location = {
+  longitude: number;
+  latitude: number;
+};
+
 type variables = {
   radiusOfMatch: number;
   amountPerKm: number;
@@ -42,6 +48,8 @@ type Props = {
   directionInfo: {duration: number; distance: number};
   paymentMethod: string;
   variables: variables;
+  watchPosition: location;
+  user: any;
   setDurationAndDistance: (info: any) => void;
 };
 
@@ -51,6 +59,8 @@ const mapStateToProps = (store: any) => ({
   directionInfo: store.User.directionInfo,
   paymentMethod: store.User.paymentMethod,
   variables: store.User.variables,
+  watchPosition: store.User.watchPosition,
+  user: store.Auth.user,
 });
 
 const styles = StyleSheet.create({
@@ -83,7 +93,7 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     letterSpacing: 2,
   },
-  fab: {backgroundColor: '#fff'},
+  fab: {backgroundColor: Colors.Brand.brandColor},
   tripInfoContainer: {
     width: 100,
     height: 40,
@@ -92,10 +102,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   ListItem: {
-    borderColor: 'transparent',
-    marginBottom: 10,
     borderRadius: 50,
-    marginVertical: 10,
   },
   modal: {
     justifyContent: 'center',
@@ -118,6 +125,10 @@ const styles = StyleSheet.create({
   },
   imagesContainer: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    marginHorizontal: 15,
+    marginTop: 10,
   },
   locationName: {
     alignSelf: 'center',
@@ -176,7 +187,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.9,
     shadowRadius: 10,
     elevation: 15,
-    paddingHorizontal: 20,
+    paddingHorizontal: 10,
     paddingBottom: 20,
   },
   mainContainer: {
@@ -284,6 +295,19 @@ class CalculatorParcel extends React.Component<Props> {
     });
   }
 
+  book() {
+    Navigation.push(this.props.componentId, {
+      component: {
+        name: NavigationScreens.CREDIT_CARD,
+        id: NavigationScreens.CREDIT_CARD,
+        passProps: {
+          location: this.props.pickUpDestination,
+          directionInfo: this.props.directionInfo,
+        },
+      },
+    });
+  }
+
   getCoords(obj: locationDetails) {
     try {
       let lng = obj.location.longitude;
@@ -301,10 +325,11 @@ class CalculatorParcel extends React.Component<Props> {
   }
 
   render() {
-    const origin = this.getCoords(this.props.pickUpLocation);
+    const origin = this.props.watchPosition;
     this.origin = origin;
     const destination = this.getCoords(this.props.pickUpDestination);
     this.destination = destination;
+    console.log(this.props.pickUpDestination);
     return (
       <Container style={styles.mainContainer}>
         <View style={styles.container}>
@@ -354,82 +379,88 @@ class CalculatorParcel extends React.Component<Props> {
           <View style={styles.suggestion}>
             <View>
               <View style={styles.imagesContainer}>
-                <View style={styles.img}>
-                  <Image
-                    style={[styles.img]}
-                    resizeMethod="resize"
-                    resizeMode="contain"
-                    source={require('../../../assets/media/images/car.png')}
-                  />
-                </View>
-                <View style={styles.img}>
-                  <Image
-                    style={[styles.img]}
-                    resizeMethod="resize"
-                    resizeMode="contain"
-                    source={require('../../../assets/media/images/bike.png')}
-                  />
-                </View>
-                <View style={styles.img}>
-                  <Image
-                    style={[styles.img]}
-                    resizeMethod="resize"
-                    resizeMode="contain"
-                    source={require('../../../assets/media/images/keke.png')}
-                  />
-                </View>
-                <View style={styles.img} />
+                <H1 style={{fontSize: 20, fontWeight: 'bold'}}>
+                  Hi {this.props.user.firstName}
+                </H1>
+                <Text> this is what we found about</Text>
+                <Text style={{color: 'dodgerblue', fontWeight: 'bold'}}>
+                  {this.props.pickUpDestination.name}
+                </Text>
               </View>
-              <ListItem
-                noIndent
-                onPress={() => this.selectPaymentOption()}
-                style={styles.ListItem}>
+
+              <ListItem noIndent style={styles.ListItem}>
+                <Icon style={styles.icoList} type="Entypo" name="address" />
+                <Body
+                  style={[
+                    styles.listBody,
+                    {flexDirection: 'column', alignItems: 'flex-start'},
+                  ]}>
+                  <Text style={{fontWeight: 'bold'}} note>
+                    Address
+                  </Text>
+
+                  <Text style={{fontSize: 10}}>
+                    {this.props.pickUpDestination.address}
+                  </Text>
+                </Body>
+              </ListItem>
+              <ListItem noIndent style={styles.ListItem}>
                 <Icon
                   style={styles.icoList}
-                  type="FontAwesome5"
-                  name="money-bill"
+                  type="MaterialCommunityIcons"
+                  name="map-marker-distance"
                 />
-                <Body style={styles.listBody}>
-                  {this.props.paymentMethod === 'cash' ? (
-                    <Text note>Cash</Text>
-                  ) : (
-                    <Text note>Charge Card</Text>
-                  )}
-                  <Icon
-                    style={styles.icoCharge}
-                    type="Entypo"
-                    name="chevron-thin-down"
-                  />
-                </Body>
-                <View style={styles.tripInfoContainer}>
-                  <H3 style={styles.price}>
-                    ₦
+                <Body
+                  style={[
+                    styles.listBody,
+                    {flexDirection: 'column', alignItems: 'flex-start'},
+                  ]}>
+                  <Text style={{fontWeight: 'bold'}} note>
+                    Distance from your location
+                  </Text>
+
+                  <Text style={{fontSize: 10}}>
                     {this.props.directionInfo.distance
-                      ? this.props.directionInfo.distance *
-                        this.props.variables.amountPerKm
+                      ? this.props.directionInfo.distance + 'km'
                       : ''}
-                  </H3>
+                  </Text>
+                </Body>
+              </ListItem>
+              <ListItem noIndent style={styles.ListItem}>
+                <Icon
+                  style={styles.icoList}
+                  type="MaterialIcons"
+                  name="access-time"
+                />
+                <Body
+                  style={[
+                    styles.listBody,
+                    {flexDirection: 'column', alignItems: 'flex-start'},
+                  ]}>
+                  <Text style={{fontWeight: 'bold'}} note>
+                    Estimated time to reach {this.props.pickUpDestination.name}
+                  </Text>
+
                   <Text note style={styles.minutes}>
                     {this.props.directionInfo.duration
                       ? this.props.directionInfo.duration.toFixed()
                       : ''}{' '}
                     minutes
                   </Text>
-                </View>
+                </Body>
               </ListItem>
               <Button
-                onPress={() => this.searchPickUp()}
+                onPress={() => this.book()}
                 iconLeft
                 rounded
                 block
                 style={styles.confirmPickUpBtn}>
-                <Icon
-                  style={styles.icoConfirm}
-                  type="FontAwesome5"
-                  name="people-carry"
-                />
+                <Icon style={styles.icoConfirm} type="Entypo" name="book" />
                 <Text uppercase={false} style={styles.confirmPickUpText}>
-                  Confirm pickup
+                  Book Reservation
+                  {this.props.directionInfo.distance
+                    ? '--₦' + this.props.directionInfo.distance * 1000
+                    : ''}
                 </Text>
               </Button>
             </View>
@@ -440,7 +471,7 @@ class CalculatorParcel extends React.Component<Props> {
             style={styles.fab}
             position="topLeft"
             onPress={() => Navigation.pop(this.props.componentId)}>
-            <Icon style={{color: Colors.Brand.brandColor}} name="arrow-back" />
+            <Icon style={{color: '#fff'}} name="arrow-back" />
           </Fab>
         </View>
       </Container>

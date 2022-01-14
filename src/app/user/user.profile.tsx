@@ -224,7 +224,7 @@ class Profile extends React.Component<Props> {
             <Icon name="camera" style={{color: Colors.Brand.brandColor}} />
           </TouchableOpacity>
           <H1 style={styles.userName}>
-            {this.props.user.firtName + ' ' + this.props.user.lastName}
+            {this.props.user.firstName + ' ' + this.props.user.lastName}
           </H1>
 
           <H2 style={styles.userEmail}>{this.props.user.email}</H2>

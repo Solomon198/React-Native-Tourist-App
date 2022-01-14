@@ -1,5 +1,11 @@
 import React from 'react';
-import {View, StyleSheet, FlatList, RefreshControl} from 'react-native';
+import {
+  View,
+  StyleSheet,
+  FlatList,
+  RefreshControl,
+  BackHandler,
+} from 'react-native';
 import {
   Icon,
   Header,
@@ -27,6 +33,7 @@ type Props = {
   errorGettingParcel: string;
   parcels: any[];
   user: User;
+  receipts: any[];
   getParcels: (userId: string, page: number) => void;
 };
 
@@ -36,6 +43,7 @@ const mapStateToProps = (store: any) => ({
   errorGettingParcel: store.User.errorGettingParcel,
   parcels: store.User.parcels,
   user: store.Auth.user,
+  receipts: store.User.receipts,
 });
 
 const mapDispatchStateToProps = (dispatch: any) => ({
@@ -92,12 +100,172 @@ const styles = StyleSheet.create({
   },
   emptyComponentIcon: {fontSize: 100, color: Colors.Brand.brandColor},
   emptyComponentText: {fontSize: 25, fontFamily: 'sans-serif-light'},
+
+  icoCharge: {
+    fontSize: 16,
+  },
+  icoList: {
+    color: '#999',
+    fontSize: 23,
+  },
+  price: {
+    fontWeight: '900',
+    color: '#555',
+  },
+  minutes: {
+    color: Colors.Brand.brandColor,
+    fontSize: 10,
+  },
+  listBody: {
+    flexDirection: 'row',
+    alignContent: 'center',
+    alignItems: 'center',
+  },
+  icoConfirm: {color: '#fff'},
+  confirmPickUpBtn: {
+    backgroundColor: Colors.Brand.brandColor,
+    marginHorizontal: 15,
+  },
+  confirmPickUpText: {
+    fontWeight: '900',
+    letterSpacing: 2,
+  },
+  fab: {backgroundColor: Colors.Brand.brandColor},
+  tripInfoContainer: {
+    width: 100,
+    height: 40,
+    justifyContent: 'center',
+    alignContent: 'center',
+    alignItems: 'center',
+  },
+  ListItem: {
+    borderRadius: 50,
+  },
+  modal: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 100000000,
+  },
+
+  modal1: {
+    height: 230,
+    backgroundColor: '#3B5998',
+  },
+  durationEmpty: {
+    backgroundColor: 'transparent',
+    flex: 2,
+    width: 200,
+  },
+  imagesContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    marginHorizontal: 15,
+    marginTop: 10,
+  },
+  locationName: {
+    alignSelf: 'center',
+    fontWeight: 'bold',
+  },
+  locationNameContainer: {
+    flex: 2,
+    borderRadius: 5,
+    backgroundColor: '#fff',
+    height: 40,
+    justifyContent: 'center',
+    alignContent: 'center',
+    alignItems: 'center',
+    paddingLeft: 5,
+  },
+  duration: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  destinationTitleContainer: {
+    flexDirection: 'row',
+    backgroundColor: 'transparent',
+    width: 150,
+    marginLeft: 30,
+    height: 40,
+    justifyContent: 'center',
+    alignContent: 'center',
+    alignItems: 'center',
+    borderRadius: 5,
+  },
+  currentLocationSelect: {
+    backgroundColor: Colors.Brand.brandColor,
+    marginVertical: 10,
+    borderColor: 'transparent',
+  },
+  descLocation: {
+    fontWeight: 'bold',
+    color: '#555',
+    fontSize: 19,
+    marginBottom: 10,
+  },
+  enlargeIndicator: {
+    width: 50,
+    height: 5,
+    backgroundColor: '#e8e8e8',
+    borderRadius: 50,
+    marginVertical: 8,
+    alignSelf: 'center',
+  },
+  suggestion: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 3},
+    shadowOpacity: 0.9,
+    shadowRadius: 10,
+    elevation: 15,
+    paddingHorizontal: 10,
+    paddingBottom: 20,
+  },
+  mainContainer: {
+    flex: 1,
+    backgroundColor: '#f4f4f4',
+  },
+  subContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignContent: 'center',
+    alignItems: 'center',
+  },
+
+  btnMenu: {
+    backgroundColor: Colors.Brand.brandColor,
+    width: 50,
+    height: 50,
+    borderRadius: 100,
+    justifyContent: 'center',
+    alignItems: 'center',
+    alignContent: 'center',
+  },
+  container: {
+    flex: 1,
+  },
+  map: {
+    flex: 4,
+    zIndex: -10,
+  },
 });
 
 class ParcelManager extends React.Component<Props> {
   componentDidMount() {
-    this.props.getParcels(this.props.user.userId, 1);
+    BackHandler.addEventListener('hardwareBackPress', this.goBack);
   }
+
+  componentWillUnmount() {
+    BackHandler.removeEventListener('hardwareBackPress', this.goBack);
+  }
+
+  goBack = () => {
+    Navigation.popToRoot(this.props.componentId);
+    return true;
+  };
+
   render() {
     return (
       <Container>
@@ -107,7 +275,7 @@ class ParcelManager extends React.Component<Props> {
           style={styles.header}>
           <Left style={styles.headerLeft}>
             <Button
-              onPress={() => Navigation.pop(this.props.componentId)}
+              onPress={() => Navigation.popToRoot(this.props.componentId)}
               dark
               transparent>
               <Icon
@@ -117,7 +285,7 @@ class ParcelManager extends React.Component<Props> {
             </Button>
           </Left>
           <Body>
-            <Title style={styles.headerTitle}>Drive History</Title>
+            <Title style={styles.headerTitle}>My Bookings</Title>
           </Body>
           <Right style={styles.listItemRight} />
         </Header>
@@ -135,47 +303,93 @@ class ParcelManager extends React.Component<Props> {
               }
             />
           }
-          renderItem={({item}) => (
+          renderItem={({item, index}) => (
             <ListItem>
-              <Left style={styles.listItemLeft}>
-                <Avatar source={{uri: item.parcelPicker.photo}} />
-              </Left>
               <Body>
-                <H1 style={styles.userName}>
-                  {item.parcelPicker.firstName +
-                    ' ' +
-                    item.parcelPicker.lastName}
+                <H1 style={{fontSize: 20, marginLeft: 10}}>
+                  Reservation ID:{' '}
+                  <H1 style={{fontSize: 20, fontWeight: 'bold'}}>
+                    {1244949494 + index}
+                  </H1>
                 </H1>
-                <Text style={styles.address} note>
-                  {item.parcelDestinationPhysicalAddress}
-                </Text>
 
-                {item.parcelStatus === 3 && (
-                  <Button iconLeft success transparent small>
-                    <Icon name="checkcircle" type="AntDesign" />
-                    <Text uppercase={false} style={styles.tripCompletedText}>
-                      Trip Completed
+                <ListItem noIndent style={styles.ListItem}>
+                  <Icon style={styles.icoList} type="Entypo" name="address" />
+                  <Body
+                    style={[
+                      styles.listBody,
+                      {flexDirection: 'column', alignItems: 'flex-start'},
+                    ]}>
+                    <Text style={{fontWeight: 'bold'}} note>
+                      Address
                     </Text>
-                  </Button>
-                )}
 
-                {item.parcelStatus === 4 && (
-                  <Button iconLeft danger transparent small>
-                    <Icon name="cancel" type="MaterialIcons" />
-                    <Text uppercase={false} style={styles.cancelledTripText}>
-                      {item.userReject
-                        ? 'You cancelled trip'
-                        : item.parcelPicker.firstName + ' cancelled trip'}
+                    <Text style={{fontSize: 10}}>{item.location.address}</Text>
+                  </Body>
+                </ListItem>
+                <ListItem noIndent style={styles.ListItem}>
+                  <Icon
+                    style={styles.icoList}
+                    type="MaterialCommunityIcons"
+                    name="map-marker-distance"
+                  />
+                  <Body
+                    style={[
+                      styles.listBody,
+                      {flexDirection: 'column', alignItems: 'flex-start'},
+                    ]}>
+                    <Text style={{fontWeight: 'bold'}} note>
+                      Distance from your location
                     </Text>
-                  </Button>
-                )}
+
+                    <Text style={{fontSize: 10}}>
+                      {item.directionInfo.distance
+                        ? item.directionInfo.distance + 'km'
+                        : ''}
+                    </Text>
+                  </Body>
+                </ListItem>
+                <ListItem noIndent style={styles.ListItem}>
+                  <Icon
+                    style={styles.icoList}
+                    type="MaterialIcons"
+                    name="access-time"
+                  />
+                  <Body
+                    style={[
+                      styles.listBody,
+                      {flexDirection: 'column', alignItems: 'flex-start'},
+                    ]}>
+                    <Text style={{fontWeight: 'bold'}} note>
+                      Estimated time to reach {item.location.name}
+                    </Text>
+
+                    <Text note style={styles.minutes}>
+                      {item.directionInfo.duration
+                        ? item.directionInfo.duration.toFixed()
+                        : ''}{' '}
+                      minutes
+                    </Text>
+                  </Body>
+                </ListItem>
+                <View style={{backgroundColor: 'whitesmoke', borderRadius: 10}}>
+                  <Text style={{fontWeight: 'bold', marginTop: 5}}>
+                    Customer Information
+                  </Text>
+                  <H1 style={styles.userName}>
+                    {this.props.user.firstName + ' ' + this.props.user.lastName}
+                  </H1>
+                  <Text style={styles.address} note>
+                    {item.email}
+                  </Text>
+                </View>
               </Body>
               <Right style={styles.listItemRight}>
-                <H1 style={styles.tripPrice}>₦{item.parcelPrice}</H1>
+                {/* <H1 style={styles.tripPrice}>₦{item.parcelPrice}</H1> */}
               </Right>
             </ListItem>
           )}
-          data={this.props.parcels}
+          data={this.props.receipts}
           keyExtractor={(item) => item._id}
           ListEmptyComponent={
             <View style={styles.emptyComponent}>

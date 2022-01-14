@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
   },
   spinnerContainer: {width: 40},
   spinnerStyle: {height: 50},
-  fabBg: {backgroundColor: '#fff'},
+  fabBg: {backgroundColor: Colors.Brand.brandColor},
   map: {
     flex: 1,
   },
@@ -245,10 +245,7 @@ class CreateParcel extends React.Component<Props> {
 
   calculateCost() {
     Keyboard.dismiss();
-    if (
-      this.props.pickUpDestination.address &&
-      this.props.pickUpLocation.address
-    ) {
+    if (this.props.pickUpDestination.address) {
       this.props.setLocationInputActive(true);
       Navigation.push(this.props.componentId, {
         component: {
@@ -274,7 +271,7 @@ class CreateParcel extends React.Component<Props> {
     this.getVariables();
     let defaultSearchStr = this.props.pickUpLocation.address || 'se';
     this.props.searchLocation(defaultSearchStr);
-    this.locationRef.focus();
+    this.props.setLocationInputActive(false);
   }
 
   setPickUpLocation(text: string) {
@@ -302,7 +299,6 @@ class CreateParcel extends React.Component<Props> {
   }
 
   componentWillUnmount() {
-    this.props.setLocationInputActive(true);
     this.props.ressetInputs();
   }
 
@@ -453,72 +449,13 @@ class CreateParcel extends React.Component<Props> {
             </Button>
           </View>
           <View style={styles.mainHeader}>
-            <H3 style={styles.label}>
-              {this.props.locationInputActive
-                ? 'Enter pick up location'
-                : 'Enter destination'}
-            </H3>
-            <Text style={styles.hint}>
-              click on the map icon to choose location on map
-            </Text>
-          </View>
-        </View>
-        <View style={styles.container}>
-          <View style={styles.icoContainer}>
-            <TouchableNativeFeedback
-              onPress={() =>
-                this.setState({showModal: true}, () => {
-                  this.props.setLocationInputActive(true);
-                })
-              }>
-              <Image
-                style={styles.locationIcon}
-                resizeMethod="resize"
-                resizeMode="contain"
-                source={require('../../../assets/media/images/map.png')}
-              />
-            </TouchableNativeFeedback>
-          </View>
-          <View style={[styles.inputContainer]}>
-            <TextInput
-              ref={(ref) => (this.locationRef = ref)}
-              onFocus={() => this.props.setLocationInputActive(true)}
-              style={styles.input}
-              value={this.props.locationSearchString}
-              placeholder="Enter pick up location"
-              onChangeText={(text) => this.setPickUpLocation(text)}
-            />
-          </View>
-          <View style={styles.locationSelectorContainer}>
-            {this.props.pickUpLocation.address ? (
-              <Icon
-                style={styles.confirmIco}
-                type="AntDesign"
-                name="checkcircle"
-              />
-            ) : (
-              <Icon
-                style={[styles.confirmIco, {color: Colors.Brand.danger}]}
-                type="AntDesign"
-                name="closecircle"
-              />
-            )}
-          </View>
-          <View style={styles.spinnerContainer}>
-            {this.props.searchingLocation === 'started' && (
-              <Spinner style={styles.spinnerStyle} size={20} />
-            )}
+            <H3 style={styles.label}>Search for places in Kaduna</H3>
           </View>
         </View>
 
         <View style={styles.container}>
           <View style={styles.icoContainer}>
-            <TouchableNativeFeedback
-              onPress={() =>
-                this.setState({showModal: true}, () => {
-                  this.props.setLocationInputActive(false);
-                })
-              }>
+            <TouchableNativeFeedback onPress={() => ''}>
               <Image
                 style={styles.locationIcon}
                 resizeMethod="resize"
@@ -532,7 +469,7 @@ class CreateParcel extends React.Component<Props> {
               onChangeText={(text) => this.setDestinationLocation(text)}
               style={styles.input}
               value={this.props.destinationSearchString}
-              placeholder="Enter destination"
+              placeholder="Search Location"
               onFocus={() => this.props.setLocationInputActive(false)}
             />
           </View>
@@ -580,19 +517,15 @@ class CreateParcel extends React.Component<Props> {
           )}
         />
 
-        {this.props.pickUpDestination.address &&
-          this.props.pickUpLocation.address && (
-            <Fab
-              active={true}
-              style={styles.fabBg}
-              position="bottomRight"
-              onPress={() => this.calculateCost()}>
-              <Icon
-                style={{color: Colors.Brand.brandColor}}
-                name="arrow-forward"
-              />
-            </Fab>
-          )}
+        {this.props.pickUpDestination.address && (
+          <Fab
+            active={true}
+            style={styles.fabBg}
+            position="bottomRight"
+            onPress={() => this.calculateCost()}>
+            <Icon style={{color: '#fff'}} name="arrow-forward" />
+          </Fab>
+        )}
       </Container>
     );
   }

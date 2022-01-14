@@ -1,6 +1,8 @@
 //application url API
 
-export const appUrl: string = 'https://dansako-3c135.web.app';
+// export const appUrl: string = 'https://dansako-3c135.web.app';
+export const appUrl: string = 'https://tour-pro.herokuapp.com';
+
 //export const appUrl: string = 'http://192.168.43.13:8070';
 export enum firebasePaths {
   PARCEL_HISTORIES = 'Parcel-histories',

@@ -15,14 +15,14 @@ import {
 import Utils from '../utilities/index';
 import * as joi from 'react-native-joi';
 import {Navigation} from 'react-native-navigation';
+import NavigationScreens from '../../../nav.config/navigation.screens';
 
 const loggedInlogs = async (payload: UserType) => {
   return Promise.all([]);
 };
 const loginSchema = joi.object({
-  phoneNumber: joi.string().length(11).required(),
+  email: joi.string().email().required(),
   password: joi.string().min(8).required(),
-  countryCode: joi.string().length(2).required(),
 });
 const login = async (payload: any) => {
   return await axios.post(appUrl + '/login', payload);
@@ -33,6 +33,7 @@ function* WatchLogin() {
   yield takeEvery(loginActionType.LOGIN_CALLER, function* (action: any) {
     try {
       yield put({type: loginActionType.LOGIN_STARTED});
+
       const {error} = loginSchema.validate(action.payload);
 
       if (error) {
@@ -101,12 +102,11 @@ function* watchSetLoginPassword() {
 // ************************************************ SIGN UP
 
 const signUpSchema = joi.object({
-  phoneNumber: joi.string().length(11).required(),
+  email: joi.string().email().required(),
   firstName: joi.string().min(2).required(),
   lastName: joi.string().min(2).required(),
   gender: joi.string().min(2).required(),
   password: joi.string().min(8).required(),
-  countryCode: joi.string().length(2).required(),
 });
 const signUp = async (payload: any) => {
   return await axios.post(appUrl + '/signUp', payload);
@@ -132,30 +132,13 @@ function* watchSignUp() {
 
         const {payload} = signUserIn.data;
 
-        let validationPayload = {
-          phoneNumber: action.payload.phoneNumber,
-          countryCode: action.payload.countryCode,
-        };
-
-        const sendVerificationCode = yield call(
-          verifyPhoneNumber.bind(this, validationPayload),
-        );
-
-        let token = sendVerificationCode.data.payload.token;
-
         yield put({
           type: signUpActionType.SIGNUP_SUCCESS,
           payload: payload,
-          token: token,
+          token: 'kdkdkfkdkdkdkdkdkdkdk',
         });
 
-        yield call(loggedInlogs.bind(null, payload));
-        Navigation.push('stack.auth.signup', {
-          component: {
-            name: 'stack.auth.verification',
-            id: 'stack.auth.verification',
-          },
-        });
+        Navigation.popToRoot(NavigationScreens.SIGNUP_SCREEN);
       }
     } catch (e) {
       let errorMessage: string;

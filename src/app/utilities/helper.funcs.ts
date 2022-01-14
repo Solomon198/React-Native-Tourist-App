@@ -51,14 +51,6 @@ export function getDefaultProfilePicture(gender: string) {
   }
 }
 
-export function formatAmountWithComma(amount: string | number) {
-  // eslint-disable-next-line radix
-  if (amount) {
-    return amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-  }
-  return '';
-}
-
 async function getImageFromGallery() {
   await requestPersmission();
   const takePicture = await ImagePicker.openPicker({
@@ -73,5 +65,4 @@ export default {
   requestPersmission,
   requestNotificationPermission,
   getImageFromGallery,
-  formatAmountWithComma,
 };
