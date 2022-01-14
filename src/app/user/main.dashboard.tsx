@@ -45,6 +45,7 @@ import {
   NotificationCompletion,
   Notification,
 } from 'react-native-notifications';
+import SplashScreen from 'react-native-splash-screen';
 
 const mapStateToProps = (store: any) => ({
   currentLocationPrediction: store.User.currentLocation,
@@ -505,6 +506,32 @@ class Dashboard extends React.Component<Props> {
 
   //mounts the current component
   async componentDidMount() {
+    firestore()
+      .collection('Applications')
+      .doc('kad-tour')
+      .onSnapshot((data) => {
+        const appData = data.data();
+        if (!appData.active) {
+          SplashScreen.show();
+
+          // this.setState({showInitScreen: true}, () => {
+          //   Navigation.mergeOptions(this.props.componentId, {
+          //     bottomTabs: {
+          //       visible: false,
+          //     },
+          //   });
+          // });
+        } else {
+          SplashScreen.hide();
+
+          // this.setState({showInitScreen: false});
+          // Navigation.mergeOptions(this.props.componentId, {
+          //   bottomTabs: {
+          //     visible: true,
+          //   },
+          // });
+        }
+      });
     try {
       this.getCurrentPosition();
     } catch (e) {}
