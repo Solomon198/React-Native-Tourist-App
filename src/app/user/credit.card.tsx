@@ -223,7 +223,7 @@ class CreditCard extends React.Component<Props> {
               style={styles.input}
               placeholder="Email Address"
               onChangeText={(text) => {
-                this.props.setCardEmail(text);
+                this.props.setCardEmail(text.trim());
                 this.setState({error: ''});
               }}
             />

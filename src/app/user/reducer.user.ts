@@ -363,21 +363,21 @@ function UserReducer(state = initialState, action: any) {
     }
 
     case setLocation.SET_LOCATION_SUCCESS: {
-      if (state.locationInputActive) {
-        state = {
-          ...state,
-          pickUpLocation: action.payload,
-          searchingLocation: searchLocation.SEARCH_LOCATION_SUCCESS,
-          locationSearchString: action.payload.name,
-        };
-      } else {
-        state = {
-          ...state,
-          pickUpDestination: action.payload,
-          searchingDestination: searchLocation.SEARCH_LOCATION_SUCCESS,
-          destinationSearchString: action.payload.name,
-        };
-      }
+      // if (state.locationInputActive) {
+      //   state = {
+      //     ...state,
+      //     pickUpLocation: action.payload,
+      //     searchingLocation: searchLocation.SEARCH_LOCATION_SUCCESS,
+      //     locationSearchString: action.payload.name,
+      //   };
+      // } else {
+      state = {
+        ...state,
+        pickUpDestination: action.payload,
+        searchingDestination: searchLocation.SEARCH_LOCATION_SUCCESS,
+        destinationSearchString: action.payload.name,
+      };
+      // }
 
       return state;
     }

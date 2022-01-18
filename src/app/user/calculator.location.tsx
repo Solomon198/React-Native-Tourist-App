@@ -16,7 +16,7 @@ import MapView, {PROVIDER_GOOGLE, Marker} from 'react-native-maps'; // remove PR
 import {Navigation} from 'react-native-navigation';
 import {connect} from 'react-redux';
 import MapViewDirections from 'react-native-maps-directions';
-import {inputActionType} from '../../configs/global.enum';
+import {inputActionType, setLocation} from '../../configs/global.enum';
 import NavigationScreens from '../../../nav.config/navigation.screens';
 import {API_KEY} from 'react-native-dotenv';
 
@@ -50,7 +50,9 @@ type Props = {
   variables: variables;
   watchPosition: location;
   user: any;
+  placeID: string;
   setDurationAndDistance: (info: any) => void;
+  setLocation: (placeId: string) => void;
 };
 
 const mapStateToProps = (store: any) => ({
@@ -223,6 +225,8 @@ const styles = StyleSheet.create({
 });
 
 const mapDispatchStateToProps = (dispatch: any) => ({
+  setLocation: (placeId: string) =>
+    dispatch({type: setLocation.SET_LOCATION_CALLER, payload: placeId}),
   setDurationAndDistance: (info: any) =>
     dispatch({
       type: inputActionType.SET_DURATION_AND_DISTANCE_CALLER,
@@ -239,7 +243,9 @@ class CalculatorParcel extends React.Component<Props> {
   destination: any;
   mapRef: any;
 
-  componentDidMount() {}
+  componentDidMount() {
+    // this.props.setLocation(this.props.placeID);
+  }
 
   componentWillUnmount() {}
 

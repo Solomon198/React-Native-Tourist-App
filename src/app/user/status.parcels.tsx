@@ -294,15 +294,15 @@ class ParcelManager extends React.Component<Props> {
           onEndReached={() =>
             this.props.getParcels(this.props.user.userId, this.props.page)
           }
-          refreshControl={
-            <RefreshControl
-              onRefresh={() => this.props.getParcels(this.props.user.userId, 1)}
-              refreshing={
-                this.props.gettingParcelStatus ===
-                GetUsersParcel.GET_PARCEL_STARTED
-              }
-            />
-          }
+          // refreshControl={
+          //   <RefreshControl
+          //     onRefresh={() => this.props.getParcels(this.props.user.userId, 1)}
+          //     refreshing={
+          //       this.props.gettingParcelStatus ===
+          //       GetUsersParcel.GET_PARCEL_STARTED
+          //     }
+          //   />
+          // }
           renderItem={({item, index}) => (
             <ListItem>
               <Body>
@@ -396,9 +396,9 @@ class ParcelManager extends React.Component<Props> {
               <Icon
                 style={styles.emptyComponentIcon}
                 type="MaterialIcons"
-                name="drive-eta"
+                name="book"
               />
-              <Text style={styles.emptyComponentText}>No drive history</Text>
+              <Text style={styles.emptyComponentText}>No Receipts Yet</Text>
             </View>
           }
         />
