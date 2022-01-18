@@ -173,7 +173,7 @@ function* watchSetDistanceAndDuration() {
 const getCurrentLocation = async (types: string, location: any) => {
   try {
     const getLocations = await axios.get(
-      `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${location.latitude},${location.longitude}&radius=1250000&types=${types}&key=AIzaSyCtd3Y6goIZCbYwzPPZeIPLKn-Fwd7bW6Y`,
+      `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${location.latitude},${location.longitude}&radius=1250000&types=${types}&key=`,
     );
     console.log(
       '==============================================================',
